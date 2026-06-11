@@ -25,11 +25,11 @@ class AnalyticsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analytics'),
+        title: const Text('Statistiques'),
         actions: [
           IconButton(
             icon: const Icon(Icons.file_download_outlined),
-            tooltip: 'Export CSV',
+            tooltip: 'Exporter CSV',
             onPressed: () => _exportCsv(context, ref),
           ),
         ],
@@ -65,7 +65,7 @@ class AnalyticsScreen extends ConsumerWidget {
             Icon(Icons.analytics_outlined, size: 64, color: colorScheme.primary),
             const SizedBox(height: 16),
             Text(
-              'No data to analyze yet',
+              'Aucune donnée à analyser',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -140,7 +140,7 @@ class AnalyticsScreen extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e')),
+          SnackBar(content: Text('Échec de l’export : $e')),
         );
       }
     }
@@ -250,7 +250,7 @@ class _AnalyticsContent extends StatelessWidget {
 
         // ── Monthly Profit Chart ────────────────────────────────────────
         Text(
-          'Monthly Profit',
+          'Profit mensuel',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -366,7 +366,7 @@ class _AnalyticsContent extends StatelessWidget {
 
         // ── Category Breakdown ──────────────────────────────────────────
         Text(
-          'Profit by Category',
+          'Profit par catégorie',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -381,7 +381,7 @@ class _AnalyticsContent extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
-              'No sold items yet to break down by category.',
+              'Aucun article vendu à analyser par catégorie.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.5),
@@ -430,7 +430,7 @@ class _StatsGrid extends StatelessWidget {
           child: Column(
             children: [
               _StatCard(
-                title: 'Total Profit',
+                title: 'Profit total',
                 value: '\u20ac${totalProfit.toStringAsFixed(2)}',
                 valueColor: totalProfit >= 0
                     ? const Color(0xFF2E7D32)
@@ -440,7 +440,7 @@ class _StatsGrid extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               _StatCard(
-                title: 'Avg Profit / Item',
+                title: 'Profit moyen / article',
                 value: '\u20ac${avgProfit.toStringAsFixed(2)}',
                 valueColor: avgProfit >= 0
                     ? const Color(0xFF2E7D32)
@@ -456,7 +456,7 @@ class _StatsGrid extends StatelessWidget {
           child: Column(
             children: [
               _StatCard(
-                title: 'Best Category',
+                title: 'Meilleure catégorie',
                 value: bestCategory,
                 valueColor: colorScheme.primary,
                 icon: Icons.category_outlined,
@@ -464,7 +464,7 @@ class _StatsGrid extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               _StatCard(
-                title: 'Sell-Through',
+                title: 'Taux de vente',
                 value: '${sellThroughRate.toStringAsFixed(1)}%',
                 valueColor: colorScheme.primary,
                 icon: Icons.pie_chart_outline,

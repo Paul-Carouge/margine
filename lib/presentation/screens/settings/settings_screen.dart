@@ -21,14 +21,14 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: const Text('Paramètres'),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
           // ── Theme Section ─────────────────────────────────────────────
           Text(
-            'Appearance',
+            'Apparence',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -44,7 +44,7 @@ class SettingsScreen extends ConsumerWidget {
             child: Column(
               children: [
                 _ThemeOption(
-                  label: 'Light',
+                  label: 'Clair',
                   icon: Icons.light_mode_outlined,
                   selected: themeMode == ThemeMode.light,
                   onTap: () => ref.read(themeModeProvider.notifier).state =
@@ -52,7 +52,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 1),
                 _ThemeOption(
-                  label: 'Dark',
+                  label: 'Sombre',
                   icon: Icons.dark_mode_outlined,
                   selected: themeMode == ThemeMode.dark,
                   onTap: () => ref.read(themeModeProvider.notifier).state =
@@ -60,7 +60,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 1),
                 _ThemeOption(
-                  label: 'System',
+                  label: 'Système',
                   icon: Icons.settings_suggest_outlined,
                   selected: themeMode == ThemeMode.system,
                   onTap: () => ref.read(themeModeProvider.notifier).state =
@@ -73,7 +73,7 @@ class SettingsScreen extends ConsumerWidget {
 
           // ── Data Section ──────────────────────────────────────────────
           Text(
-            'Data',
+            'Données',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -90,21 +90,21 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 _DataActionTile(
                   icon: Icons.file_download_outlined,
-                  label: 'Export All Data (CSV)',
+                  label: 'Exporter toutes les données (CSV)',
                   onTap: () => _exportAllData(context, ref),
                 ),
                 const Divider(height: 1),
                 _DataActionTile(
                   icon: Icons.upload_file_outlined,
-                  label: 'Import Data',
-                  subtitle: 'Coming soon',
+                  label: 'Importer des données',
+                  subtitle: 'Bientôt',
                   enabled: false,
                 ),
                 const Divider(height: 1),
                 _DataActionTile(
                   icon: Icons.delete_sweep_outlined,
-                  label: 'Clear All Data',
-                  subtitle: 'Coming soon',
+                  label: 'Tout effacer',
+                  subtitle: 'Bientôt',
                   enabled: false,
                 ),
               ],
@@ -114,7 +114,7 @@ class SettingsScreen extends ConsumerWidget {
 
           // ── About Section ─────────────────────────────────────────────
           Text(
-            'About',
+            'À propos',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -137,7 +137,7 @@ class SettingsScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'App',
+                        'Application',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
@@ -203,7 +203,7 @@ class SettingsScreen extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          'View Source',
+                          'Voir le code',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: colorScheme.primary,
@@ -244,7 +244,7 @@ class SettingsScreen extends ConsumerWidget {
     if (products.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No data to export.')),
+          const SnackBar(content: Text('Aucune donnée à exporter.')),
         );
       }
       return;
@@ -289,7 +289,7 @@ class SettingsScreen extends ConsumerWidget {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: 'Margine Data Export',
+          text: 'Export Margine',
         ),
       );
     } catch (e) {
@@ -434,7 +434,7 @@ class _DataActionTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  'Soon',
+                  'Bientôt',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,

@@ -34,14 +34,14 @@ class ItemDetailScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Product Detail'),
+        title: const Text('Détail de l’article'),
       ),
       body: productAsync.when(
         data: (product) {
           if (product == null) {
             return Center(
               child: Text(
-                'Product not found',
+                'Article introuvable',
                 style: theme.textTheme.bodyLarge,
               ),
             );
@@ -52,9 +52,9 @@ class ItemDetailScreen extends ConsumerWidget {
             data: (categories) {
               final cat =
                   categories.where((c) => c.id == product.categoryId).firstOrNull;
-              return cat?.name ?? 'Uncategorized';
+              return cat?.name ?? 'Non catégorisé';
             },
-            orElse: () => 'Uncategorized',
+            orElse: () => 'Non catégorisé',
           );
 
           return _DetailContent(
@@ -99,13 +99,13 @@ class _DetailContent extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Product'),
+        title: const Text('Supprimer l’article'),
         content: Text(
             'Are you sure you want to delete "${product.name}"? This cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
-            child: const Text('Cancel'),
+            child: const Text('Annuler'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -119,7 +119,7 @@ class _DetailContent extends StatelessWidget {
               if (context.mounted) context.pop(); // close dialog
               if (context.mounted) context.pop(); // go back
             },
-            child: const Text('Delete'),
+            child: const Text('Supprimer'),
           ),
         ],
       ),
@@ -170,11 +170,11 @@ class _DetailContent extends StatelessWidget {
           theme: theme,
           children: [
             _InfoRow(
-              label: 'Purchase Price',
+              label: 'Prix d’achat',
               value: '\u20ac${product.purchasePrice.toStringAsFixed(2)}',
             ),
             _InfoRow(
-              label: 'Purchase Date',
+              label: 'Date d’achat',
               value: dateFormat.format(product.purchaseDate),
             ),
             _InfoRow(
@@ -183,27 +183,27 @@ class _DetailContent extends StatelessWidget {
             ),
             if (product.listingPrice != null)
               _InfoRow(
-                label: 'Listing Price',
+                label: 'Prix de vente annoncé',
                 value: '\u20ac${product.listingPrice!.toStringAsFixed(2)}',
               ),
             if (product.minPrice != null)
               _InfoRow(
-                label: 'Min Price',
+                label: 'Prix minimum',
                 value: '\u20ac${product.minPrice!.toStringAsFixed(2)}',
               ),
             if (product.salePrice != null)
               _InfoRow(
-                label: 'Sale Price',
+                label: 'Prix de vente',
                 value: '\u20ac${product.salePrice!.toStringAsFixed(2)}',
               ),
             if (product.saleDate != null)
               _InfoRow(
-                label: 'Sale Date',
+                label: 'Date de vente',
                 value: dateFormat.format(product.saleDate!),
               ),
             if (product.vintedFees > 0)
               _InfoRow(
-                label: 'Vinted Fees',
+                label: 'Frais Vinted',
                 value: '\u20ac${product.vintedFees.toStringAsFixed(2)}',
               ),
           ],
@@ -400,7 +400,7 @@ class _FinancialSummary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Financial Summary',
+            'Récapitulatif financier',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -410,13 +410,13 @@ class _FinancialSummary extends StatelessWidget {
 
           // Total invested & revenue
           _InfoRow(
-            label: 'Total Invested',
+            label: 'Total investi',
             value: '\u20ac${totalInvested.toStringAsFixed(2)}',
           ),
           if (product.salePrice != null) ...[
             const SizedBox(height: 2),
             _InfoRow(
-              label: 'Total Revenue',
+              label: 'Revenu total',
               value: '\u20ac${totalRevenue.toStringAsFixed(2)}',
             ),
           ],
@@ -429,7 +429,7 @@ class _FinancialSummary extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Net Profit',
+                  'Profit net',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -443,7 +443,7 @@ class _FinancialSummary extends StatelessWidget {
             ),
           ] else ...[
             Text(
-              'Not yet sold',
+              'Pas encore vendu',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
@@ -476,7 +476,7 @@ class _CostsBreakdown extends StatelessWidget {
       theme: theme,
       children: [
         Text(
-          'Costs Breakdown',
+          'Détail des coûts',
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
             color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -484,22 +484,22 @@ class _CostsBreakdown extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _InfoRow(
-          label: 'Purchase Price',
+          label: 'Prix d’achat',
           value: '\u20ac${product.purchasePrice.toStringAsFixed(2)}',
         ),
         if (product.vintedFees > 0)
           _InfoRow(
-            label: 'Vinted Fees',
+            label: 'Frais Vinted',
             value: '\u20ac${product.vintedFees.toStringAsFixed(2)}',
           ),
         if (product.shippingCost > 0)
           _InfoRow(
-            label: 'Shipping',
+            label: 'Frais de port',
             value: '\u20ac${product.shippingCost.toStringAsFixed(2)}',
           ),
         if (product.packagingCost > 0)
           _InfoRow(
-            label: 'Packaging',
+            label: 'Emballage',
             value: '\u20ac${product.packagingCost.toStringAsFixed(2)}',
           ),
         const Divider(height: 16),
@@ -721,7 +721,7 @@ class _ActionButtons extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: onMarkListed,
               icon: const Icon(Icons.sell_outlined, size: 18),
-              label: const Text('Mark as Listed'),
+              label: const Text('Mettre en ligne'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFE65100),
                 foregroundColor: Colors.white,
@@ -734,7 +734,7 @@ class _ActionButtons extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: onMarkSold,
               icon: const Icon(Icons.check_circle_outline, size: 18),
-              label: const Text('Mark as Sold'),
+              label: const Text('Marquer comme vendu'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2E7D32),
                 foregroundColor: Colors.white,
@@ -748,7 +748,7 @@ class _ActionButtons extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: onEdit,
             icon: const Icon(Icons.edit_outlined, size: 18),
-            label: const Text('Edit'),
+            label: const Text('Modifier'),
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: colorScheme.primary),
             ),
@@ -759,7 +759,7 @@ class _ActionButtons extends StatelessWidget {
         TextButton.icon(
           onPressed: onDelete,
           icon: const Icon(Icons.delete_outline, size: 18),
-          label: const Text('Delete'),
+          label: const Text('Supprimer'),
           style: TextButton.styleFrom(
             foregroundColor: const Color(0xFFC62828),
           ),

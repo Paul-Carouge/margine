@@ -15,9 +15,9 @@ class ItemsScreen extends ConsumerStatefulWidget {
 }
 
 class _ItemsScreenState extends ConsumerState<ItemsScreen> {
-  String _selectedFilter = 'All';
+  String _selectedFilter = 'Tous';
 
-  static const _filters = ['All', 'Bought', 'Listed', 'Sold'];
+  static const _filters = ['Tous', 'Acheté', 'En ligne', 'Vendu'];
 
   @override
   Widget build(BuildContext context) {
@@ -28,14 +28,21 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Items'),
+        title: const Text('Articles'),
       ),
       body: productsAsync.when(
         data: (products) {
-          final filteredProducts = _selectedFilter == 'All'
+          final filteredProducts = _selectedFilter == 'Tous'
               ? products
               : products
-                  .where((p) => p.status == _selectedFilter.toLowerCase())
+                  .where((p) {
+                    const filterMap = {
+                      'Acheté': 'bought',
+                      'En ligne': 'listed',
+                      'Vendu': 'sold',
+                    };
+                    return p.status == filterMap[_selectedFilter];
+                  })
                   .toList();
 
           if (products.isEmpty) {
@@ -90,7 +97,7 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
                 child: filteredProducts.isEmpty
                     ? Center(
                         child: Text(
-                          'No ${_selectedFilter.toLowerCase()} items',
+                          'Aucun article dans cette catégorie',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: colorScheme.onSurface.withValues(alpha: 0.5),
                           ),
@@ -116,7 +123,7 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => Center(child: Text('Erreur : $e')),
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: colorScheme.primary,
@@ -229,9 +236,9 @@ class _ItemCard extends StatelessWidget {
     };
 
     final statusLabel = switch (product.status) {
-      'sold' => 'Sold',
-      'listed' => 'Listed',
-      _ => 'Bought',
+      'sold' => 'Vendu',
+      'listed' => 'En ligne',
+      _ => 'Acheté',
     };
 
     final statusIcon = switch (product.status) {
@@ -256,7 +263,7 @@ class _ItemCard extends StatelessWidget {
             const Icon(Icons.arrow_forward, color: Colors.white, size: 24),
             const SizedBox(height: 4),
             Text(
-              'Mark as\n${switch (product.status) { 'bought' => 'Listed', 'listed' => 'Sold', _ => 'Sold' }}',
+              'Marquer comme\n${switch (product.status) { 'bought' => 'En ligne', 'listed' => 'Vendu', _ => 'Vendu' }}',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
@@ -341,7 +348,7 @@ class _ItemCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Bought: \u20ac${product.purchasePrice.toStringAsFixed(2)}',
+                    'Acheté : \u20ac${product.purchasePrice.toStringAsFixed(2)}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
@@ -349,7 +356,7 @@ class _ItemCard extends StatelessWidget {
                   if (product.salePrice != null) ...[
                     const SizedBox(width: 12),
                     Text(
-                      'Sold: \u20ac${product.salePrice!.toStringAsFixed(2)}',
+                      'Vendu : \u20ac${product.salePrice!.toStringAsFixed(2)}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: const Color(0xFF2E7D32),
                       ),
@@ -370,7 +377,7 @@ class _ItemCard extends StatelessWidget {
                   child: Row(
                     children: [
                       Text(
-                        'Profit: \u20ac${netProfit.toStringAsFixed(2)}',
+                        'Profit : \u20ac${netProfit.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -437,14 +444,14 @@ class _EmptyItems extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'No items yet',
+              'Aucun article pour l\'instant',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Start tracking your Vinted margins.\nTap + to add your first item.',
+              'Suivez vos marges Vinted.\nAppuyez sur + pour ajouter votre premier article.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -454,7 +461,7 @@ class _EmptyItems extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () => context.push('/items/add'),
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add First Item'),
+              label: const Text('Ajouter un article'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,

@@ -26,7 +26,7 @@ class StatusChip extends StatelessWidget {
               ? const Color(0xFF2E7D32)
               : const Color(0xFF66BB6A),
           Icons.check_circle_outline,
-          'Sold',
+          'Vendu',
         ),
       'listed' => (
           theme.brightness == Brightness.light
@@ -36,7 +36,7 @@ class StatusChip extends StatelessWidget {
               ? const Color(0xFFE65100)
               : const Color(0xFFFF8A65),
           Icons.sell_outlined,
-          'Listed',
+          'En ligne',
         ),
       _ => (
           theme.brightness == Brightness.light
@@ -46,7 +46,7 @@ class StatusChip extends StatelessWidget {
               ? const Color(0xFF1565C0)
               : const Color(0xFF42A5F5),
           Icons.shopping_bag_outlined,
-          'Bought',
+          'Acheté',
         ),
     };
 

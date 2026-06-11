@@ -41,9 +41,9 @@ class EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // "No items yet" heading
+            // "Aucun article pour l'instant" heading
             Text(
-              'No items yet',
+              'Aucun article pour l\'instant',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -52,8 +52,8 @@ class EmptyState extends StatelessWidget {
 
             // Subtitle
             Text(
-              'Start tracking your Vinted margins.\n'
-              'Add your first purchase to see your profit.',
+              'Suivez vos marges Vinted.\n'
+              'Ajoutez votre premier achat pour voir votre profit.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -65,7 +65,7 @@ class EmptyState extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () => context.push('/items/add'),
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add Your First Item'),
+              label: const Text('Ajouter un article'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,

@@ -39,7 +39,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
   bool _isLoading = false;
   bool _isInitialized = false;
 
-  static const _sources = ['Vinted', 'AliExpress', 'Other'];
+  static const _sources = ['Vinted', 'AliExpress', 'Autre'];
 
   @override
   void initState() {
@@ -124,23 +124,23 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit Item' : 'Add Item'),
+        title: Text(isEditing ? 'Modifier l\'article' : 'Ajouter un article'),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
           children: [
-            // ── Name ─────────────────────────────────────────────────────
-            _sectionLabel('Name *', theme),
+            // ── Nom ─────────────────────────────────────────────────────
+            _sectionLabel('Nom *', theme),
             const SizedBox(height: 6),
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(
-                hintText: 'e.g., Levi\'s 501 Jeans',
+                hintText: 'Ex. : Levi\'s 501',
               ),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                  (v == null || v.trim().isEmpty) ? 'Le nom est requis' : null,
             ),
             const SizedBox(height: 16),
 
@@ -151,19 +151,19 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
               controller: _descriptionController,
               maxLines: 3,
               decoration: const InputDecoration(
-                hintText: 'Condition, size, color, notes...',
+                hintText: 'État, taille, couleur, notes...',
               ),
             ),
             const SizedBox(height: 16),
 
-            // ── Category ─────────────────────────────────────────────────
-            _sectionLabel('Category', theme),
+            // ── Catégorie ─────────────────────────────────────────────────
+            _sectionLabel('Catégorie', theme),
             const SizedBox(height: 6),
             categoriesAsync.when(
               data: (categories) => DropdownButtonFormField<int>(
                 initialValue: _categoryId,
                 decoration: const InputDecoration(
-                  hintText: 'Select a category',
+                  hintText: 'Sélectionnez une catégorie',
                 ),
                 items: categories
                     .map(
@@ -178,14 +178,14 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
               loading: () => DropdownButtonFormField<int>(
                 items: [],
                 onChanged: null,
-                decoration: InputDecoration(hintText: 'Loading...'),
+                decoration: InputDecoration(hintText: 'Chargement...'),
               ),
-              error: (e, _) => Text('Error: $e'),
+              error: (e, _) => Text('Erreur : $e'),
             ),
             const SizedBox(height: 16),
 
-            // ── Purchase Price ───────────────────────────────────────────
-            _sectionLabel('Purchase Price *', theme),
+            // ── Prix d'achat ───────────────────────────────────────────
+            _sectionLabel('Prix d\'achat *', theme),
             const SizedBox(height: 6),
             TextFormField(
               controller: _purchasePriceController,
@@ -196,17 +196,17 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
                 hintText: '0.00',
               ),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Required';
+                if (v == null || v.trim().isEmpty) return 'Requis';
                 final val = double.tryParse(v.replaceAll(',', '.'));
-                if (val == null || val <= 0) return 'Must be > 0';
+                if (val == null || val <= 0) return 'Doit être > 0';
                 return null;
               },
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
 
-            // ── Purchase Date ────────────────────────────────────────────
-            _sectionLabel('Purchase Date', theme),
+            // ── Date d'achat ────────────────────────────────────────────
+            _sectionLabel('Date d\'achat', theme),
             const SizedBox(height: 6),
             _DatePickerField(
               date: _purchaseDate,
@@ -233,8 +233,8 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
             ),
             const SizedBox(height: 16),
 
-            // ── Listing Price ────────────────────────────────────────────
-            _sectionLabel('Listing Price', theme),
+            // ── Prix annoncé ────────────────────────────────────────────
+            _sectionLabel('Prix annoncé', theme),
             const SizedBox(height: 6),
             TextFormField(
               controller: _listingPriceController,
@@ -247,8 +247,8 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
             ),
             const SizedBox(height: 16),
 
-            // ── Minimum Price ────────────────────────────────────────────
-            _sectionLabel('Minimum Price', theme),
+            // ── Prix minimum ────────────────────────────────────────────
+            _sectionLabel('Prix minimum', theme),
             const SizedBox(height: 6),
             TextFormField(
               controller: _minPriceController,
@@ -256,19 +256,19 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(
                 prefixText: '\u20ac ',
-                hintText: 'For negotiations',
+                hintText: 'Pour les négociations',
               ),
             ),
             const SizedBox(height: 16),
 
-            // ── Status ───────────────────────────────────────────────────
-            _sectionLabel('Status', theme),
+            // ── Statut ───────────────────────────────────────────────────
+            _sectionLabel('Statut', theme),
             const SizedBox(height: 6),
             SegmentedButton<String>(
               segments: const [
-                ButtonSegment(value: 'bought', label: Text('Bought')),
-                ButtonSegment(value: 'listed', label: Text('Listed')),
-                ButtonSegment(value: 'sold', label: Text('Sold')),
+                ButtonSegment(value: 'bought', label: Text('Acheté')),
+                ButtonSegment(value: 'listed', label: Text('En ligne')),
+                ButtonSegment(value: 'sold', label: Text('Vendu')),
               ],
               selected: {_status},
               onSelectionChanged: (v) =>
@@ -283,7 +283,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
             // ── Sale fields (visible when status = sold) ─────────────────
             if (_status == 'sold') ...[
               // Sale Price
-              _sectionLabel('Sale Price', theme),
+              _sectionLabel('Prix de vente', theme),
               const SizedBox(height: 6),
               TextFormField(
                 controller: _salePriceController,
@@ -298,13 +298,13 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
               const SizedBox(height: 16),
 
               // Sale Date
-              _sectionLabel('Sale Date', theme),
+              _sectionLabel('Date de vente', theme),
               const SizedBox(height: 6),
               _DatePickerField(
                 date: _saleDate ?? DateTime.now(),
                 label: _saleDate != null
                     ? DateFormat('dd/MM/yyyy').format(_saleDate!)
-                    : 'Select sale date',
+                    : 'Sélectionnez une date',
                 onTap: () => _pickDate(
                   context,
                   initial: _saleDate ?? DateTime.now(),

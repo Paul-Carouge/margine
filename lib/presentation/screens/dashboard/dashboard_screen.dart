@@ -107,7 +107,7 @@ class _DashboardContent extends StatelessWidget {
           children: [
             Expanded(
               child: _KpiCard(
-                title: 'Total Profit',
+                title: 'Profit total',
                 value: '\u20ac${totalProfit.toStringAsFixed(2)}',
                 valueColor: totalProfit >= 0
                     ? const Color(0xFF2E7D32)
@@ -146,17 +146,17 @@ class _DashboardContent extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _StatItem(label: 'Items', value: '$count'),
-              _StatItem(label: 'Sold', value: '$soldCount'),
-              _StatItem(label: 'Active', value: '${count - soldCount}'),
+              _StatItem(label: 'Articles', value: '$count'),
+              _StatItem(label: 'Vendus', value: '$soldCount'),
+              _StatItem(label: 'Actifs', value: '${count - soldCount}'),
             ],
           ),
         ),
         const SizedBox(height: 20),
 
-        // Recent items header
+        // Articles récents header
         Text(
-          'Recent Items',
+          'Articles récents',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -169,7 +169,7 @@ class _DashboardContent extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 24),
             child: Center(
               child: Text(
-                'No items yet — tap + to add your first.',
+                'Aucun article pour l\'instant — appuyez sur + pour ajouter.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
@@ -330,9 +330,9 @@ class _RecentItemCard extends StatelessWidget {
     };
 
     final statusLabel = switch (product.status) {
-      'sold' => 'Sold',
-      'listed' => 'Listed',
-      _ => 'Bought',
+      'sold' => 'Vendu',
+      'listed' => 'En ligne',
+      _ => 'Acheté',
     };
 
     return GestureDetector(
@@ -467,14 +467,14 @@ class _EmptyDashboard extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'No items yet',
+              'Aucun article pour l\'instant',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Start tracking your Vinted margins.\nAdd your first purchase to see your profit.',
+              'Suivez vos marges Vinted.\nAjoutez votre premier achat pour voir votre profit.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -484,7 +484,7 @@ class _EmptyDashboard extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () => context.push('/items/add'),
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Add First Item'),
+              label: const Text('Ajouter un article'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
@@ -520,7 +520,7 @@ class _ErrorView extends StatelessWidget {
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
             Text(
-              'Something went wrong',
+              'Une erreur est survenue',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),

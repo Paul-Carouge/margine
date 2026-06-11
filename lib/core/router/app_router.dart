@@ -32,17 +32,17 @@ class _MainShell extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),
             activeIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+            label: 'Accueil',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.inventory_2_outlined),
             activeIcon: Icon(Icons.inventory_2),
-            label: 'Items',
+            label: 'Articles',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.analytics_outlined),
             activeIcon: Icon(Icons.analytics),
-            label: 'Analytics',
+            label: 'Statistiques',
           ),
         ],
       ),
