@@ -1,0 +1,675 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:drift/drift.dart' hide Column;
+
+import '../../providers/app_providers.dart';
+import '../../../data/database/app_database.dart';
+
+/// Add/Edit item screen — full form for creating or updating a product.
+class AddEditItemScreen extends ConsumerStatefulWidget {
+  final int? id;
+
+  const AddEditItemScreen({super.key, this.id});
+
+  @override
+  ConsumerState<AddEditItemScreen> createState() => _AddEditItemScreenState();
+}
+
+class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _purchasePriceController;
+  late final TextEditingController _listingPriceController;
+  late final TextEditingController _minPriceController;
+  late final TextEditingController _salePriceController;
+  late final TextEditingController _vintedFeesController;
+  late final TextEditingController _shippingCostController;
+  late final TextEditingController _packagingCostController;
+  late final TextEditingController _notesController;
+
+  int? _categoryId;
+  DateTime _purchaseDate = DateTime.now();
+  DateTime? _saleDate;
+  String _source = 'Vinted';
+  String _status = 'bought';
+  bool _isLoading = false;
+  bool _isInitialized = false;
+
+  static const _sources = ['Vinted', 'AliExpress', 'Other'];
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    _descriptionController = TextEditingController();
+    _purchasePriceController = TextEditingController();
+    _listingPriceController = TextEditingController();
+    _minPriceController = TextEditingController();
+    _salePriceController = TextEditingController();
+    _vintedFeesController = TextEditingController();
+    _shippingCostController = TextEditingController();
+    _packagingCostController = TextEditingController();
+    _notesController = TextEditingController();
+
+    // Auto-calc vinted fees when sale price changes
+    _salePriceController.addListener(_autoCalcVintedFees);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _purchasePriceController.dispose();
+    _listingPriceController.dispose();
+    _minPriceController.dispose();
+    _salePriceController.removeListener(_autoCalcVintedFees);
+    _salePriceController.dispose();
+    _vintedFeesController.dispose();
+    _shippingCostController.dispose();
+    _packagingCostController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  /// Auto-calculate Vinted fees as 5% of sale price.
+  void _autoCalcVintedFees() {
+    final saleText = _salePriceController.text;
+    final salePrice = double.tryParse(saleText.replaceAll(',', '.'));
+    if (salePrice != null && salePrice > 0) {
+      final fees = salePrice * 0.05;
+      _vintedFeesController.text = fees.toStringAsFixed(2);
+    } else {
+      _vintedFeesController.text = '0.00';
+    }
+  }
+
+  /// Calculate net profit from current form values.
+  double get _netProfit {
+    final purchasePrice =
+        double.tryParse(_purchasePriceController.text.replaceAll(',', '.')) ??
+            0.0;
+    final salePrice =
+        double.tryParse(_salePriceController.text.replaceAll(',', '.')) ?? 0.0;
+    final vintedFees =
+        double.tryParse(_vintedFeesController.text.replaceAll(',', '.')) ?? 0.0;
+    final shippingCost =
+        double.tryParse(_shippingCostController.text.replaceAll(',', '.')) ??
+            0.0;
+    final packagingCost =
+        double.tryParse(_packagingCostController.text.replaceAll(',', '.')) ??
+            0.0;
+
+    if (salePrice > 0) {
+      return salePrice - purchasePrice - vintedFees - shippingCost - packagingCost;
+    }
+    return 0.0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isEditing = widget.id != null;
+
+    // Load existing product if editing
+    if (isEditing && !_isInitialized) {
+      _loadProduct();
+    }
+
+    final categoriesAsync = ref.watch(categoriesStreamProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(isEditing ? 'Edit Item' : 'Add Item'),
+      ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+          children: [
+            // ── Name ─────────────────────────────────────────────────────
+            _sectionLabel('Name *', theme),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                hintText: 'e.g., Levi\'s 501 Jeans',
+              ),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+            ),
+            const SizedBox(height: 16),
+
+            // ── Description ──────────────────────────────────────────────
+            _sectionLabel('Description', theme),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _descriptionController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Condition, size, color, notes...',
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Category ─────────────────────────────────────────────────
+            _sectionLabel('Category', theme),
+            const SizedBox(height: 6),
+            categoriesAsync.when(
+              data: (categories) => DropdownButtonFormField<int>(
+                initialValue: _categoryId,
+                decoration: const InputDecoration(
+                  hintText: 'Select a category',
+                ),
+                items: categories
+                    .map(
+                      (cat) => DropdownMenuItem(
+                        value: cat.id,
+                        child: Text(cat.name),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) => setState(() => _categoryId = v),
+              ),
+              loading: () => DropdownButtonFormField<int>(
+                items: [],
+                onChanged: null,
+                decoration: InputDecoration(hintText: 'Loading...'),
+              ),
+              error: (e, _) => Text('Error: $e'),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Purchase Price ───────────────────────────────────────────
+            _sectionLabel('Purchase Price *', theme),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _purchasePriceController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                prefixText: '\u20ac ',
+                hintText: '0.00',
+              ),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Required';
+                final val = double.tryParse(v.replaceAll(',', '.'));
+                if (val == null || val <= 0) return 'Must be > 0';
+                return null;
+              },
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Purchase Date ────────────────────────────────────────────
+            _sectionLabel('Purchase Date', theme),
+            const SizedBox(height: 6),
+            _DatePickerField(
+              date: _purchaseDate,
+              onTap: () => _pickDate(
+                context,
+                initial: _purchaseDate,
+                onPicked: (d) => setState(() => _purchaseDate = d),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Source ───────────────────────────────────────────────────
+            _sectionLabel('Source', theme),
+            const SizedBox(height: 6),
+            DropdownButtonFormField<String>(
+              initialValue: _source,
+              decoration: const InputDecoration(),
+              items: _sources
+                  .map(
+                    (s) => DropdownMenuItem(value: s, child: Text(s)),
+                  )
+                  .toList(),
+              onChanged: (v) => setState(() => _source = v ?? 'Vinted'),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Listing Price ────────────────────────────────────────────
+            _sectionLabel('Listing Price', theme),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _listingPriceController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                prefixText: '\u20ac ',
+                hintText: '0.00',
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Minimum Price ────────────────────────────────────────────
+            _sectionLabel('Minimum Price', theme),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _minPriceController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                prefixText: '\u20ac ',
+                hintText: 'For negotiations',
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Status ───────────────────────────────────────────────────
+            _sectionLabel('Status', theme),
+            const SizedBox(height: 6),
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'bought', label: Text('Bought')),
+                ButtonSegment(value: 'listed', label: Text('Listed')),
+                ButtonSegment(value: 'sold', label: Text('Sold')),
+              ],
+              selected: {_status},
+              onSelectionChanged: (v) =>
+                  setState(() => _status = v.first),
+              style: SegmentedButton.styleFrom(
+                selectedBackgroundColor: colorScheme.primary.withValues(alpha: 0.2),
+                selectedForegroundColor: colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Sale fields (visible when status = sold) ─────────────────
+            if (_status == 'sold') ...[
+              // Sale Price
+              _sectionLabel('Sale Price', theme),
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: _salePriceController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  prefixText: '\u20ac ',
+                  hintText: '0.00',
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 16),
+
+              // Sale Date
+              _sectionLabel('Sale Date', theme),
+              const SizedBox(height: 6),
+              _DatePickerField(
+                date: _saleDate ?? DateTime.now(),
+                label: _saleDate != null
+                    ? DateFormat('dd/MM/yyyy').format(_saleDate!)
+                    : 'Select sale date',
+                onTap: () => _pickDate(
+                  context,
+                  initial: _saleDate ?? DateTime.now(),
+                  onPicked: (d) => setState(() => _saleDate = d),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // ── Vinted Fees ─────────────────────────────────────────────
+            _sectionLabel('Vinted Fees', theme),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _vintedFeesController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                prefixText: '\u20ac ',
+                hintText: 'Auto-calculated (5% of sale)',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Shipping Cost ────────────────────────────────────────────
+            _sectionLabel('Shipping Cost', theme),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _shippingCostController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                prefixText: '\u20ac ',
+                hintText: '0.00',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Packaging Cost ───────────────────────────────────────────
+            _sectionLabel('Packaging Cost', theme),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _packagingCostController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                prefixText: '\u20ac ',
+                hintText: '0.00',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Net Profit Display (live) ────────────────────────────────
+            if (_salePriceController.text.isNotEmpty &&
+                double.tryParse(_salePriceController.text
+                        .replaceAll(',', '.')) !=
+                    null &&
+                double.parse(
+                        _salePriceController.text.replaceAll(',', '.')) >
+                    0) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF9D0),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Net Profit',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      '\u20ac${_netProfit.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'monospace',
+                        color: _netProfit >= 0
+                            ? const Color(0xFF2E7D32)
+                            : const Color(0xFFC62828),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // ── Notes ────────────────────────────────────────────────────
+            _sectionLabel('Notes', theme),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _notesController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Any additional information...',
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // ── Save Button ──────────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _saveProduct,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        isEditing ? 'Update Item' : 'Save Item',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // -----------------------------------------------------------------------
+  // Helpers
+  // -----------------------------------------------------------------------
+
+  Widget _sectionLabel(String label, ThemeData theme) {
+    return Text(
+      label,
+      style: theme.textTheme.labelLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  Future<void> _pickDate(
+    BuildContext context, {
+    required DateTime initial,
+    required ValueChanged<DateTime> onPicked,
+  }) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+    if (picked != null) {
+      onPicked(picked);
+    }
+  }
+
+  Future<void> _loadProduct() async {
+    if (_isInitialized) return;
+    _isInitialized = true;
+
+    final product =
+        await ref.read(productDaoProvider).getById(widget.id!);
+    if (product == null || !mounted) return;
+
+    setState(() {
+      _nameController.text = product.name;
+      _descriptionController.text = product.description ?? '';
+      _categoryId = product.categoryId;
+      _purchasePriceController.text = product.purchasePrice.toStringAsFixed(2);
+      _purchaseDate = product.purchaseDate;
+      _source = product.source;
+      _status = product.status;
+      if (product.listingPrice != null) {
+        _listingPriceController.text =
+            product.listingPrice!.toStringAsFixed(2);
+      }
+      if (product.minPrice != null) {
+        _minPriceController.text = product.minPrice!.toStringAsFixed(2);
+      }
+      if (product.salePrice != null) {
+        _salePriceController.text = product.salePrice!.toStringAsFixed(2);
+      }
+      _saleDate = product.saleDate;
+      _vintedFeesController.text = product.vintedFees.toStringAsFixed(2);
+      _shippingCostController.text = product.shippingCost.toStringAsFixed(2);
+      _packagingCostController.text = product.packagingCost.toStringAsFixed(2);
+      _notesController.text = product.notes ?? '';
+    });
+  }
+
+  Future<void> _saveProduct() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_categoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a category')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final dao = ref.read(productDaoProvider);
+      final now = DateTime.now();
+
+      double? parsePrice(String? text) {
+        if (text == null || text.trim().isEmpty) return null;
+        return double.tryParse(text.replaceAll(',', '.'));
+      }
+
+      final purchasePrice =
+          parsePrice(_purchasePriceController.text) ?? 0.0;
+      final salePrice = parsePrice(_salePriceController.text);
+      final listingPrice = parsePrice(_listingPriceController.text);
+      final minPrice = parsePrice(_minPriceController.text);
+      final vintedFees = parsePrice(_vintedFeesController.text) ?? 0.0;
+      final shippingCost = parsePrice(_shippingCostController.text) ?? 0.0;
+      final packagingCost = parsePrice(_packagingCostController.text) ?? 0.0;
+
+      if (widget.id != null) {
+        // Update existing product
+        await dao.updateProduct(
+          ProductsCompanion(
+            id: Value(widget.id!),
+            name: Value(_nameController.text.trim()),
+            description: _descriptionController.text.trim().isNotEmpty
+                ? Value(_descriptionController.text.trim())
+                : Value.absent(),
+            categoryId: Value(_categoryId!),
+            purchasePrice: Value(purchasePrice),
+            purchaseDate: Value(_purchaseDate),
+            source: Value(_source),
+            status: Value(_status),
+            listingPrice: listingPrice != null
+                ? Value(listingPrice)
+                : Value.absent(),
+            minPrice:
+                minPrice != null ? Value(minPrice) : Value.absent(),
+            salePrice:
+                salePrice != null ? Value(salePrice) : Value.absent(),
+            saleDate: _saleDate != null
+                ? Value(_saleDate!)
+                : Value.absent(),
+            vintedFees: Value(vintedFees),
+            shippingCost: Value(shippingCost),
+            packagingCost: Value(packagingCost),
+            notes: _notesController.text.trim().isNotEmpty
+                ? Value(_notesController.text.trim())
+                : Value.absent(),
+            updatedAt: Value(now),
+            createdAt: Value(now), // preserved by drift
+          ),
+        );
+      } else {
+        // Insert new product
+        final now = DateTime.now();
+        await dao.insert(
+          ProductsCompanion(
+            name: Value(_nameController.text.trim()),
+            description: _descriptionController.text.trim().isNotEmpty
+                ? Value(_descriptionController.text.trim())
+                : Value.absent(),
+            categoryId: Value(_categoryId!),
+            purchasePrice: Value(purchasePrice),
+            purchaseDate: Value(_purchaseDate),
+            source: Value(_source),
+            status: Value(_status),
+            listingPrice: Value(listingPrice),
+            minPrice: Value(minPrice),
+            salePrice: Value(salePrice),
+            saleDate: Value(_saleDate),
+            vintedFees: Value(vintedFees),
+            shippingCost: Value(shippingCost),
+            packagingCost: Value(packagingCost),
+            notes: _notesController.text.trim().isNotEmpty
+                ? Value(_notesController.text.trim())
+                : Value.absent(),
+            createdAt: Value(now),
+            updatedAt: Value(now),
+          ),
+        );
+      }
+
+      if (mounted) {
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Date picker field widget
+// ---------------------------------------------------------------------------
+
+class _DatePickerField extends StatelessWidget {
+  final DateTime date;
+  final VoidCallback onTap;
+  final String? label;
+
+  const _DatePickerField({
+    required this.date,
+    required this.onTap,
+    this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final displayLabel =
+        label ?? DateFormat('dd/MM/yyyy').format(date);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              displayLabel,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+            ),
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 18,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
