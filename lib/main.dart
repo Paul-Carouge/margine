@@ -18,7 +18,7 @@ class MargineApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
-      title: 'Margine',
+      title: "L'Établi",
       debugShowCheckedModeBanner: false,
       theme: MargineTheme.light,
       darkTheme: MargineTheme.dark,

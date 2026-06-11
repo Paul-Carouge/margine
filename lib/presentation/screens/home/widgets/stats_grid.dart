@@ -14,8 +14,6 @@ class StatsGrid extends StatelessWidget {
     final invested = (stats['totalInvested'] as double?) ?? 0;
     final revenue = (stats['totalRevenue'] as double?) ?? 0;
     final profit = (stats['totalProfit'] as double?) ?? 0;
-    final count = (stats['count'] as int?) ?? 0;
-    final soldCount = (stats['soldCount'] as int?) ?? 0;
     final stockCount = (stats['boughtCount'] as int?) ?? 0;
 
     return Container(

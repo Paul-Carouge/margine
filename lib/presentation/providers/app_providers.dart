@@ -66,6 +66,11 @@ final productByIdProvider =
 final monthlyGoalProvider = StateProvider<double>((ref) => 300.0);
 final filterStatusProvider = StateProvider<String>((ref) => 'all');
 final searchQueryProvider = StateProvider<String>((ref) => '');
+final showSearchProvider = StateProvider<bool>((ref) => false);
+
+enum SortOption { dateDesc, profitDesc, priceDesc, nameAsc }
+
+final sortOptionProvider = StateProvider<SortOption>((ref) => SortOption.dateDesc);
 
 /// Returns the display name for a status key.
 String statusLabel(String status) {

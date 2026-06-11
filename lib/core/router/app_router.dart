@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../presentation/screens/splash/splash_screen.dart';
 import '../../presentation/screens/home/home_screen.dart';
 import '../../presentation/screens/add_product/add_product_screen.dart';
 import '../../presentation/screens/analytics/analytics_screen.dart';
@@ -9,7 +10,8 @@ import '../../presentation/screens/settings/settings_screen.dart';
 /// No bottom nav. Simple push-based navigation.
 ///
 /// Routes:
-///   /                           — Home (L'Atelier)
+///   /                           — Splash → Home (L'Atelier)
+///   /home                       — Home (L'Atelier)
 ///   /article/ajouter            — Ajouter un article
 ///   /article/:id/modifier       — Modifier un article
 ///   /analytics                  — Statistiques
@@ -17,7 +19,8 @@ import '../../presentation/screens/settings/settings_screen.dart';
 final goRouter = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
+    GoRoute(path: '/', builder: (_, __) => const SplashScreen()),
+    GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
     GoRoute(
       path: '/article/ajouter',
       pageBuilder: (context, state) => _slideUp(

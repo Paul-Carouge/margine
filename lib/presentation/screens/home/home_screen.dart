@@ -19,13 +19,29 @@ import 'widgets/product_card.dart';
 ///   • Filter pills
 ///   • Vertical scroll of photo-hero product cards
 ///   • FAB for quick add
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final statsAsync = ref.watch(dashboardStatsProvider);
     final filter = ref.watch(filterStatusProvider);
+    final searchQuery = ref.watch(searchQueryProvider);
+    final showSearch = ref.watch(showSearchProvider);
+    final sortOption = ref.watch(sortOptionProvider);
     final productsAsync = filter == 'all'
         ? ref.watch(productsStreamProvider)
         : ref.watch(productsByStatusProvider(filter));
@@ -39,7 +55,7 @@ class HomeScreen extends ConsumerWidget {
           SafeArea(
             child: CustomScrollView(
               slivers: [
-                // ── Compact header ────────────────────────────────────────────
+                // ── Header row ────────────────────────────────────────────
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
@@ -47,24 +63,67 @@ class HomeScreen extends ConsumerWidget {
                       children: [
                         Text(
                           "L'Établi",
-                      style: textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
+                          style: textTheme.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Spacer(),
+                        // ── Search toggle ──────────────────────────────────
+                        _IconBtn(
+                          icon: showSearch ? Icons.close_rounded : Icons.search_rounded,
+                          onTap: () {
+                            if (showSearch) {
+                              _searchCtrl.clear();
+                              ref.read(searchQueryProvider.notifier).state = '';
+                            }
+                            ref.read(showSearchProvider.notifier).state = !showSearch;
+                          },
+                        ),
+                        const SizedBox(width: 4),
+                        // ── Sort popup ────────────────────────────────────
+                        _SortBtn(
+                          current: sortOption,
+                          onSelected: (s) => ref.read(sortOptionProvider.notifier).state = s,
+                        ),
+                        const SizedBox(width: 4),
+                        _IconBtn(
+                          icon: Icons.bar_chart_rounded,
+                          onTap: () => context.push('/analytics'),
+                        ),
+                        const SizedBox(width: 4),
+                        _IconBtn(
+                          icon: Icons.settings_rounded,
+                          onTap: () => context.push('/settings'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // ── Search bar (conditionnel) ─────────────────────────────
+                if (showSearch)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                      child: TextField(
+                        autofocus: true,
+                        controller: _searchCtrl,
+                        onChanged: (v) => ref.read(searchQueryProvider.notifier).state = v.toLowerCase(),
+                        decoration: InputDecoration(
+                          hintText: 'Rechercher un article…',
+                          prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                          suffixIcon: searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear_rounded, size: 18),
+                                  onPressed: () {
+                                    _searchCtrl.clear();
+                                    ref.read(searchQueryProvider.notifier).state = '';
+                                  },
+                                )
+                              : null,
+                        ),
                       ),
                     ),
-                    const Spacer(),
-                    _IconBtn(
-                      icon: Icons.bar_chart_rounded,
-                      onTap: () => context.push('/analytics'),
-                    ),
-                    const SizedBox(width: 4),
-                    _IconBtn(
-                      icon: Icons.settings_rounded,
-                      onTap: () => context.push('/settings'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
 
             // ── Stats cockpit ───────────────────────────────────────────────
             SliverToBoxAdapter(
@@ -100,7 +159,32 @@ class HomeScreen extends ConsumerWidget {
             // ── Product gallery ─────────────────────────────────────────────
             productsAsync.when(
               data: (products) {
-                if (products.isEmpty) {
+                // ── Apply search filter + sort ─────────────────────────
+                var filtered = products.where((p) {
+                  if (searchQuery.isEmpty) return true;
+                  return p.name.toLowerCase().contains(searchQuery);
+                }).toList();
+
+                switch (sortOption) {
+                  case SortOption.dateDesc:
+                    // already sorted by updatedAt desc
+                    break;
+                  case SortOption.profitDesc:
+                    filtered.sort((a, b) {
+                      final pa = profitFor(a);
+                      final pb = profitFor(b);
+                      return pb.compareTo(pa);
+                    });
+                    break;
+                  case SortOption.priceDesc:
+                    filtered.sort((a, b) => b.purchasePrice.compareTo(a.purchasePrice));
+                    break;
+                  case SortOption.nameAsc:
+                    filtered.sort((a, b) => a.name.compareTo(b.name));
+                    break;
+                }
+
+                if (filtered.isEmpty) {
                   return SliverFillRemaining(
                     hasScrollBody: false,
                     child: _EmptyState(filter: filter),
@@ -109,21 +193,22 @@ class HomeScreen extends ConsumerWidget {
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      final product = products[index];
+                      final product = filtered[index];
                       return Padding(
                         padding: EdgeInsets.fromLTRB(
                           20,
                           index == 0 ? 0 : 0,
                           20,
-                          index == products.length - 1 ? 100 : 12,
+                          index == filtered.length - 1 ? 100 : 12,
                         ),
-                        child: ProductCard(
+                        child: _SwipeableCard(
                           product: product,
                           onTap: () => _showDetail(context, product),
+                          onMarkSold: () => _quickMarkSold(product.id),
                         ),
                       );
                     },
-                    childCount: products.length,
+                    childCount: filtered.length,
                   ),
                 );
               },
@@ -179,6 +264,191 @@ class HomeScreen extends ConsumerWidget {
       isScrollControlled: true,
       useSafeArea: true,
       builder: (_) => _ProductDetailSheet(product: product),
+    );
+  }
+
+  void _quickMarkSold(int id) {
+    final dao = ref.read(productDaoProvider);
+    dao.updateProduct(ProductsCompanion(
+      id: Value(id),
+      status: const Value('sold'),
+      saleDate: Value(DateTime.now()),
+    ));
+    HapticFeedback.heavyImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Marqué comme vendu ✓'),
+        backgroundColor: MargineTheme.profitGreen,
+      ),
+    );
+  }
+}
+
+// ── Swipeable product card ─────────────────────────────────────────────────
+
+class _SwipeableCard extends StatelessWidget {
+  final Product product;
+  final VoidCallback onTap;
+  final VoidCallback onMarkSold;
+
+  const _SwipeableCard({
+    required this.product,
+    required this.onTap,
+    required this.onMarkSold,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    if (product.status == 'sold') {
+      return ProductCard(product: product, onTap: onTap);
+    }
+
+    return Dismissible(
+      key: ValueKey('swipe_${product.id}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 28),
+        decoration: BoxDecoration(
+          color: MargineTheme.profitGreen,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle_rounded, color: Colors.white, size: 28),
+            SizedBox(height: 2),
+            Text('Vendu', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Marquer comme vendu ?'),
+            content: Text(product.name),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Confirmer')),
+            ],
+          ),
+        ) ?? false;
+      },
+      onDismissed: (_) => onMarkSold(),
+      child: ProductCard(product: product, onTap: onTap),
+    );
+  }
+}
+
+// ── Sort button ────────────────────────────────────────────────────────────
+
+class _SortBtn extends StatelessWidget {
+  final SortOption current;
+  final ValueChanged<SortOption> onSelected;
+
+  const _SortBtn({required this.current, required this.onSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => _showMenu(context),
+        child: const Padding(
+          padding: EdgeInsets.all(10),
+          child: Icon(Icons.sort_rounded, size: 22),
+        ),
+      ),
+    );
+  }
+
+  void _showMenu(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: cs.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text('Trier par', style: Theme.of(context).textTheme.titleMedium),
+            ),
+            const SizedBox(height: 8),
+            _SortTile(
+              icon: Icons.schedule_rounded,
+              label: 'Plus récent',
+              selected: current == SortOption.dateDesc,
+              onTap: () { onSelected(SortOption.dateDesc); Navigator.pop(ctx); },
+            ),
+            _SortTile(
+              icon: Icons.trending_up_rounded,
+              label: 'Marge la plus élevée',
+              selected: current == SortOption.profitDesc,
+              onTap: () { onSelected(SortOption.profitDesc); Navigator.pop(ctx); },
+            ),
+            _SortTile(
+              icon: Icons.euro_rounded,
+              label: 'Prix achat le plus élevé',
+              selected: current == SortOption.priceDesc,
+              onTap: () { onSelected(SortOption.priceDesc); Navigator.pop(ctx); },
+            ),
+            _SortTile(
+              icon: Icons.sort_by_alpha_rounded,
+              label: 'Ordre alphabétique',
+              selected: current == SortOption.nameAsc,
+              onTap: () { onSelected(SortOption.nameAsc); Navigator.pop(ctx); },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SortTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _SortTile({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ListTile(
+      leading: Icon(icon, size: 20, color: selected ? cs.primary : cs.onSurfaceVariant),
+      title: Text(
+        label,
+        style: TextStyle(color: selected ? cs.primary : cs.onSurface, fontWeight: selected ? FontWeight.w600 : FontWeight.w400),
+      ),
+      trailing: selected ? Icon(Icons.check_rounded, size: 18, color: cs.primary) : null,
+      onTap: onTap,
     );
   }
 }
