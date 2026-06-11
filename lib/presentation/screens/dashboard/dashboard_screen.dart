@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -64,7 +65,10 @@ class DashboardScreen extends ConsumerWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        onPressed: () => context.push('/items/add'),
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          context.push('/items/add');
+        },
         child: const Icon(Icons.add),
       ),
     );

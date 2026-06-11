@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:drift/drift.dart' hide Column;
 
 import '../../providers/app_providers.dart';
 import '../../../data/database/app_database.dart';
+import '../../widgets/profit_display.dart';
 
 /// Items screen — full list of all products with filtering and swipe actions.
 class ItemsScreen extends ConsumerStatefulWidget {
@@ -131,7 +135,10 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        onPressed: () => context.push('/items/add'),
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          context.push('/items/add');
+        },
         child: const Icon(Icons.add),
       ),
     );
@@ -188,6 +195,21 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
         createdAt: Value(product.createdAt),
       ),
     );
+
+    if (context.mounted) {
+      HapticFeedback.mediumImpact();
+      final label = switch (nextStatus) {
+        'listed' => 'En ligne',
+        'sold' => 'Vendu',
+        _ => 'Acheté',
+      };
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Marqué comme $label'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
 
@@ -263,7 +285,7 @@ class _ItemCard extends StatelessWidget {
             const Icon(Icons.arrow_forward, color: Colors.white, size: 24),
             const SizedBox(height: 4),
             Text(
-              'Marquer comme\n${switch (product.status) { 'bought' => 'En ligne', 'listed' => 'Vendu', _ => 'Vendu' }}',
+              'Marquer comme\\n${switch (product.status) { 'bought' => 'En ligne', 'listed' => 'Vendu', _ => 'Vendu' }}',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
@@ -278,163 +300,175 @@ class _ItemCard extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(14),
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: theme.cardTheme.color,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top row: name + status chip
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      product.name,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (product.quantity > 1) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'x${product.quantity}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusBgColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+              // ── Photo Thumbnail ──────────────────────────────────────
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: product.photoPath != null
+                      ? Image.file(
+                          File(product.photoPath!),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => _PhotoFallback(colorScheme: colorScheme),
+                        )
+                      : _PhotoFallback(colorScheme: colorScheme),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // ── Info Column ──────────────────────────────────────────
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Name + quantity badge + status
+                    Row(
                       children: [
-                        Icon(statusIcon, size: 12, color: statusColor),
-                        const SizedBox(width: 4),
-                        Text(
-                          statusLabel,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: statusColor,
+                        Expanded(
+                          child: Text(
+                            product.name,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Details row
-              Row(
-                children: [
-                  // Category icon (placeholder)
-                  Icon(
-                    Icons.category_outlined,
-                    size: 14,
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Cat. #${product.categoryId}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Acheté : \u20ac${product.purchasePrice.toStringAsFixed(2)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  if (product.salePrice != null) ...[
-                    const SizedBox(width: 12),
-                    Text(
-                      'Vendu : \u20ac${product.salePrice!.toStringAsFixed(2)}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF2E7D32),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-
-              // Profit / ROI section
-              if (netProfit != null) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEF9D0),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Profit : \u20ac${netProfit.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'monospace',
-                          color: const Color(0xFF2E7D32),
-                        ),
-                      ),
-                      if (roi != null) ...[
+                        if (product.quantity > 1) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'x${product.quantity}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
+                            horizontal: 10,
+                            vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF557000).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
+                            color: statusBgColor,
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Text(
-                            '+${roi.toStringAsFixed(1)}%',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'monospace',
-                              color: const Color(0xFF557000),
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(statusIcon, size: 12, color: statusColor),
+                              const SizedBox(width: 4),
+                              Text(
+                                statusLabel,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Details row
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.category_outlined,
+                          size: 14,
+                          color: colorScheme.onSurface.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Cat. #${product.categoryId}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Achat : \u20ac${product.purchasePrice.toStringAsFixed(2)}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        if (product.salePrice != null) ...[
+                          const SizedBox(width: 12),
+                          Text(
+                            'Vente : \u20ac${product.salePrice!.toStringAsFixed(2)}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFF2E7D32),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+
+                    // Profit / ROI section
+                    if (netProfit != null) ...[
+                      const SizedBox(height: 6),
+                      ProfitDisplay(
+                        profit: netProfit,
+                        roi: roi,
+                        compact: true,
+                      ),
                     ],
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Photo fallback ──────────────────────────────────────────────────────────
+
+class _PhotoFallback extends StatelessWidget {
+  final ColorScheme colorScheme;
+
+  const _PhotoFallback({required this.colorScheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: const BoxDecoration(
+        color: Color(0xFFF0F0F0),
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
+      child: Icon(
+        Icons.inventory_2_outlined,
+        size: 24,
+        color: colorScheme.onSurface.withValues(alpha: 0.4),
       ),
     );
   }

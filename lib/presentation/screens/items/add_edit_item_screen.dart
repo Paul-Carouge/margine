@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -765,6 +766,13 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
       }
 
       if (mounted) {
+        HapticFeedback.mediumImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Article enregistré'),
+            duration: Duration(seconds: 2),
+          ),
+        );
         context.pop();
       }
     } catch (e) {

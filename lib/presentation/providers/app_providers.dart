@@ -63,6 +63,7 @@ final productsByStatusProvider =
 /// Fetches aggregate dashboard statistics.
 final dashboardStatsProvider =
     FutureProvider<Map<String, dynamic>>((ref) async {
+  ref.watch(productsStreamProvider); // auto-invalidate when products change
   final dao = ref.watch(productDaoProvider);
   return dao.getStats();
 });

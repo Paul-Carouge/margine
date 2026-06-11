@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -118,6 +119,7 @@ class _DetailContent extends StatelessWidget {
               await ref.read(productDaoProvider).deleteProduct(product.id);
               ref.invalidate(productsStreamProvider);
               ref.invalidate(dashboardStatsProvider);
+              HapticFeedback.heavyImpact();
               if (context.mounted) context.pop(); // close dialog
               if (context.mounted) context.pop(); // go back
             },
@@ -128,7 +130,7 @@ class _DetailContent extends StatelessWidget {
     );
   }
 
-  void _markAs(Product p, String newStatus) {
+  void _markAs(Product p, String newStatus, BuildContext context) {
     ref.read(productDaoProvider).updateProduct(
           ProductsCompanion(
             id: Value(p.id),
@@ -144,6 +146,13 @@ class _DetailContent extends StatelessWidget {
         );
     ref.invalidate(productsStreamProvider);
     ref.invalidate(dashboardStatsProvider);
+    HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(newStatus == 'sold' ? 'Marqué comme Vendu' : 'Marqué comme En ligne'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -241,10 +250,10 @@ class _DetailContent extends StatelessWidget {
           onEdit: () => context.push('/items/edit/${product.id}'),
           onDelete: () => _deleteProduct(context),
           onMarkSold: product.status == 'listed'
-              ? () => _markAs(product, 'sold')
+              ? () => _markAs(product, 'sold', context)
               : null,
           onMarkListed: product.status == 'bought'
-              ? () => _markAs(product, 'listed')
+              ? () => _markAs(product, 'listed', context)
               : null,
           theme: theme,
           colorScheme: colorScheme,
