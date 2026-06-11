@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
@@ -23,6 +24,7 @@ class AnalyticsScreen extends ConsumerWidget {
 
     final statsAsync = ref.watch(dashboardStatsProvider);
     final productsAsync = ref.watch(productsStreamProvider);
+    final monthlyAsync = ref.watch(monthlyStatsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -89,8 +91,8 @@ class AnalyticsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
 
-              // ── Donut chart ────────────────────────────────────────────────
-              Text('Répartition', style: tt.titleMedium),
+              // ── Status breakdown donut ───────────────────────────────────
+              Text('Statuts', style: tt.titleMedium),
               const SizedBox(height: 12),
               SizedBox(
                 height: 200,
@@ -103,42 +105,59 @@ class AnalyticsScreen extends ConsumerWidget {
                           PieChart(
                             PieChartData(
                               sections: [
-                                PieChartSectionData(
-                                  value: invested > 0 ? invested : 1,
-                                  color: MargineTheme.statusSold,
-                                  radius: 55,
-                                  showTitle: false,
-                                ),
-                                PieChartSectionData(
-                                  value: profit > 0 ? profit : 1,
-                                  color: MargineTheme.profitGreen,
-                                  radius: 55,
-                                  showTitle: false,
-                                ),
+                                if (boughtCount > 0)
+                                  PieChartSectionData(
+                                    value: boughtCount.toDouble(),
+                                    color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                                    radius: 50,
+                                    showTitle: false,
+                                  ),
+                                if (listedCount > 0)
+                                  PieChartSectionData(
+                                    value: listedCount.toDouble(),
+                                    color: MargineTheme.statusListed,
+                                    radius: 50,
+                                    showTitle: false,
+                                  ),
+                                if (soldCount > 0)
+                                  PieChartSectionData(
+                                    value: soldCount.toDouble(),
+                                    color: MargineTheme.profitGreen,
+                                    radius: 50,
+                                    showTitle: false,
+                                  ),
+                                if (count == 0)
+                                  PieChartSectionData(
+                                    value: 1,
+                                    color: cs.outlineVariant,
+                                    radius: 50,
+                                    showTitle: false,
+                                  ),
                               ],
-                              sectionsSpace: 0,
-                              centerSpaceRadius: 60,
+                              sectionsSpace: 2,
+                              centerSpaceRadius: 48,
                             ),
                           ),
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('${count} art.', style: tt.titleSmall?.copyWith(color: cs.onSurface)),
-                              const SizedBox(height: 2),
-                              Icon(Icons.inventory_2_outlined, size: 18, color: cs.onSurfaceVariant),
+                              Text('$count', style: tt.headlineMedium?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w700)),
+                              Text('articles', style: tt.bodySmall),
                             ],
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 20),
+                    const SizedBox(width: 16),
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _LegendDot(color: MargineTheme.statusSold, label: 'Investi ${invested.toStringAsFixed(0)} €'),
-                        const SizedBox(height: 10),
-                        _LegendDot(color: MargineTheme.profitGreen, label: 'Profit ${profit.toStringAsFixed(0)} €'),
+                        _LegendDot(color: cs.onSurfaceVariant.withValues(alpha: 0.5), label: 'Stock : $boughtCount'),
+                        const SizedBox(height: 8),
+                        _LegendDot(color: MargineTheme.statusListed, label: 'En ligne : $listedCount'),
+                        const SizedBox(height: 8),
+                        _LegendDot(color: MargineTheme.profitGreen, label: 'Vendu : $soldCount'),
                       ],
                     ),
                   ],
@@ -168,6 +187,103 @@ class AnalyticsScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 28),
+
+              // ── Monthly evolution ──────────────────────────────────────
+              monthlyAsync.when(
+                data: (monthly) {
+                  if (monthly.length < 2) return const SizedBox(width: 0, height: 0);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Évolution mensuelle', style: tt.titleMedium),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 200,
+                        child: BarChart(
+                          BarChartData(
+                            alignment: BarChartAlignment.spaceAround,
+                            maxY: monthly.map((m) => (m['invested'] as double)).reduce((a, b) => a > b ? a : b) * 1.4,
+                            barGroups: monthly.map((m) {
+                              final invested = (m['invested'] as double);
+                              final revenue = (m['revenue'] as double);
+                              return BarChartGroupData(
+                                x: m['month'] as int,
+                                barRods: [
+                                  BarChartRodData(
+                                    toY: invested,
+                                    color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                                    width: 10,
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                                  ),
+                                  if (revenue > 0)
+                                    BarChartRodData(
+                                      toY: revenue,
+                                      color: MargineTheme.profitGreen,
+                                      width: 10,
+                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                                    ),
+                                ],
+                              );
+                            }).toList(),
+                            titlesData: FlTitlesData(
+                              show: true,
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  getTitlesWidget: (value, meta) {
+                                    final m = value.toInt();
+                                    if (m < 1 || m > 12) return const SizedBox.shrink();
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 6),
+                                      child: Text(_frenchMonthAbbr(m), style: tt.bodySmall?.copyWith(fontSize: 10)),
+                                    );
+                                  },
+                                  reservedSize: 20,
+                                ),
+                              ),
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 40,
+                                  getTitlesWidget: (value, meta) => Text(
+                                    '${value.toInt()}€',
+                                    style: tt.bodySmall?.copyWith(fontSize: 9),
+                                  ),
+                                ),
+                              ),
+                              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            ),
+                            gridData: FlGridData(
+                              show: true,
+                              drawVerticalLine: false,
+                              horizontalInterval: 1,
+                              getDrawingHorizontalLine: (value) => FlLine(
+                                color: cs.outlineVariant.withValues(alpha: 0.3),
+                                strokeWidth: 1,
+                              ),
+                            ),
+                            borderData: FlBorderData(show: false),
+                            barTouchData: BarTouchData(enabled: false),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _LegendDot(color: cs.onSurfaceVariant.withValues(alpha: 0.5), label: 'Investi'),
+                          const SizedBox(width: 16),
+                          _LegendDot(color: MargineTheme.profitGreen, label: 'Revenu'),
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+                    ],
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
 
               // ── Best & worst margin ─────────────────────────────────────────
               productsAsync.when(
@@ -202,6 +318,13 @@ class AnalyticsScreen extends ConsumerWidget {
     await Share.shareXFiles([XFile(file.path)], text: 'Export L\'Établi');
     HapticFeedback.mediumImpact();
   }
+  static const _months = [
+    '', 'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
+    'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.',
+  ];
+
+  static String _frenchMonthAbbr(int m) =>
+      (m >= 1 && m <= 12) ? _months[m] : '';
 }
 
 // ── Widgets ─────────────────────────────────────────────────────────────────

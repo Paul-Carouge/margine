@@ -59,6 +59,12 @@ final productByIdProvider =
   return ref.watch(productDaoProvider).getById(id);
 });
 
+final monthlyStatsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  ref.watch(productsStreamProvider);
+  return ref.watch(productDaoProvider).getMonthlyStats();
+});
+
 // ---------------------------------------------------------------------------
 // UI State providers
 // ---------------------------------------------------------------------------

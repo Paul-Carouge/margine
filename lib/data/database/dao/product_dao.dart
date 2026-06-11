@@ -87,4 +87,43 @@ class ProductDao extends DatabaseAccessor<AppDatabase> {
   Future<void> deleteProduct(int id) =>
       (delete(attachedDatabase.products)..where((t) => t.id.equals(id)))
           .go();
+
+  /// Get monthly revenue/profit stats grouped by (year, month).
+  ///
+  /// Returns a list of maps sorted by date ascending. Each map has keys:
+  ///   year, month, invested, revenue, profit, count
+  Future<List<Map<String, dynamic>>> getMonthlyStats() async {
+    final all = await select(attachedDatabase.products).get();
+
+    final Map<String, Map<String, dynamic>> groups = {};
+
+    for (final p in all) {
+      final key = '${p.purchaseDate.year}-${p.purchaseDate.month.toString().padLeft(2, '0')}';
+      groups.putIfAbsent(key, () => {
+        'year': p.purchaseDate.year,
+        'month': p.purchaseDate.month,
+        'invested': 0.0,
+        'revenue': 0.0,
+        'profit': 0.0,
+        'count': 0,
+      });
+      groups[key]!['invested'] = (groups[key]!['invested'] as double) + p.purchasePrice;
+      groups[key]!['count'] = (groups[key]!['count'] as int) + 1;
+      if (p.status == 'sold' && p.salePrice != null) {
+        groups[key]!['revenue'] = (groups[key]!['revenue'] as double) + p.salePrice!;
+        groups[key]!['profit'] = (groups[key]!['profit'] as double) +
+            p.salePrice! - p.purchasePrice - p.vintedFees - p.shippingCost - p.packagingCost;
+      }
+    }
+
+    final sorted = groups.values.toList()
+      ..sort((a, b) {
+        final ya = a['year'] as int;
+        final yb = b['year'] as int;
+        if (ya != yb) return ya.compareTo(yb);
+        return (a['month'] as int).compareTo(b['month'] as int);
+      });
+
+    return sorted;
+  }
 }
