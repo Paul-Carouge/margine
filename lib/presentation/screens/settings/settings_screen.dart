@@ -12,8 +12,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../providers/app_providers.dart';
 import '../../widgets/app_toast.dart';
 
-/// Settings screen — Coinbase‑style redesign with apparence, données,
-/// and à propos sections.
+/// Settings screen — apparence, données, and à propos sections.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -27,6 +26,10 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Paramètres'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -210,7 +213,7 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Objectif mensuel'),
         content: TextField(
           controller: controller,
@@ -378,7 +381,7 @@ class _ThemeOption extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected
                     ? colorScheme.primary.withValues(alpha: 0.1)
-                    : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    : colorScheme.outline.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -461,7 +464,7 @@ class _DataActionTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: enabled
                     ? colorScheme.primary.withValues(alpha: 0.1)
-                    : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    : colorScheme.outline.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -503,6 +506,7 @@ class _DataActionTile extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
+                          fontFamily: 'Inter',
                           color: colorScheme.primary,
                         ),
                       ),
@@ -526,6 +530,7 @@ class _DataActionTile extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
+                          fontFamily: 'Inter',
                           color: colorScheme.primary,
                         ),
                       ),
@@ -629,7 +634,7 @@ class _AboutGitHubRow extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha: 0.1),
+                color: const Color(0xFF333333).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -725,6 +730,7 @@ class _UpdateRow extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
+                  fontFamily: 'Inter',
                   color: colorScheme.primary,
                 ),
               ),

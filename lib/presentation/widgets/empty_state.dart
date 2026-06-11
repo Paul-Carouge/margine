@@ -3,10 +3,10 @@ import 'package:go_router/go_router.dart';
 
 /// Full-screen empty state shown when the user has no items yet.
 ///
-/// Displays the "MARGINE" wordmark in letter-spaced style, a "No items yet"
-/// message, and a call-to-action button to add the first item.
+/// Displays the "MARGINE" wordmark in letter-spaced Sora ExtraBold style,
+/// a "No items yet" message, and a call-to-action button to add the first item.
 ///
-/// Used on the **Dashboard** and **Items** screens.
+/// Colors follow the "Noir & Amethyst" design system v2.
 class EmptyState extends StatelessWidget {
   const EmptyState({super.key});
 
@@ -21,11 +21,11 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo mark — rising arrow icon
+            // Logo mark — trending up icon
             Icon(
               Icons.trending_up_rounded,
               size: 80,
-              color: colorScheme.primary,
+              color: colorScheme.primary.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 24),
 
@@ -33,9 +33,10 @@ class EmptyState extends StatelessWidget {
             Text(
               'M A R G I N E',
               style: TextStyle(
+                fontFamily: 'Sora',
                 fontSize: 28,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 3.0,
+                letterSpacing: 4.2,
                 color: colorScheme.primary,
               ),
             ),
@@ -46,6 +47,7 @@ class EmptyState extends StatelessWidget {
               'Aucun article pour l\'instant',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -56,7 +58,7 @@ class EmptyState extends StatelessWidget {
               'Ajoutez votre premier achat pour voir votre profit.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 24),
@@ -70,7 +72,7 @@ class EmptyState extends StatelessWidget {
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,

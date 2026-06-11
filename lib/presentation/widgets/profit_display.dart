@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 /// Reusable widget that shows a profit amount and its ROI percentage.
 ///
-/// The profit is displayed in a large monospace font, green for positive
+/// The profit is displayed in a large Inter (tabular) font, green for positive
 /// numbers and red for negative. The ROI is shown as a smaller badge next
-/// to the profit amount, styled with the tennis-green tonal container.
+/// to the profit amount, styled with the gold accent color per v2 design.
 class ProfitDisplay extends StatelessWidget {
   const ProfitDisplay({
     super.key,
@@ -30,10 +30,14 @@ class ProfitDisplay extends StatelessWidget {
     final profitColor = isPositive
         ? (theme.brightness == Brightness.light
             ? const Color(0xFF2E7D32)
-            : const Color(0xFF66BB6A))
+            : const Color(0xFF4CAF50))
         : (theme.brightness == Brightness.light
             ? const Color(0xFFC62828)
             : const Color(0xFFEF5350));
+
+    final goldColor = theme.brightness == Brightness.light
+        ? const Color(0xFFB8860B)
+        : const Color(0xFFF5A623);
 
     final prefix = isPositive ? '+' : '';
     final profitText = '$prefix\u20ac${profit.toStringAsFixed(2)}';
@@ -43,7 +47,7 @@ class ProfitDisplay extends StatelessWidget {
       style: TextStyle(
         fontSize: compact ? 16 : 22,
         fontWeight: FontWeight.w700,
-        fontFamily: 'monospace',
+        fontFamily: 'Inter',
         color: profitColor,
       ),
     );
@@ -53,19 +57,17 @@ class ProfitDisplay extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: theme.brightness == Brightness.light
-                  ? const Color(0xFFEEF9D0)
-                  : const Color(0xFF2A3A00),
-              borderRadius: BorderRadius.circular(10),
+                  ? const Color(0xFFB8860B).withValues(alpha: 0.12)
+                  : const Color(0xFFF5A623).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               '${roi! >= 0 ? '+' : ''}${roi!.toStringAsFixed(1)}%',
               style: TextStyle(
                 fontSize: compact ? 11 : 13,
                 fontWeight: FontWeight.w600,
-                fontFamily: 'monospace',
-                color: theme.brightness == Brightness.light
-                    ? const Color(0xFF557000)
-                    : const Color(0xFFC5F02E),
+                fontFamily: 'Inter',
+                color: goldColor,
               ),
             ),
           )

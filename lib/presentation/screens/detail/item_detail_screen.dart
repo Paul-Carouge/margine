@@ -38,7 +38,7 @@ class ItemDetailScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Détail de l’article'),
+        title: const Text('Détail de l\u2019article'),
       ),
       body: productAsync.when(
         data: (product) {
@@ -102,8 +102,8 @@ class _DetailContent extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Supprimer l’article'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Supprimer l\u2019article'),
         content: Text(
             'Êtes-vous sûr de vouloir supprimer "${product.name}" ? Cette action est irréversible.'),
         actions: [
@@ -186,7 +186,7 @@ class _DetailContent extends StatelessWidget {
               value: '\u20ac${product.purchasePrice.toStringAsFixed(2)}',
             ),
             _InfoRow(
-              label: 'Date d’achat',
+              label: 'Date d\u2019achat',
               value: dateFormat.format(product.purchaseDate),
             ),
             _InfoRow(
@@ -290,14 +290,15 @@ class _DetailContent extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(20),
+                color: colorScheme.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 categoryName,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
+                  fontFamily: 'Inter',
                   color: colorScheme.primary,
                 ),
               ),
@@ -408,7 +409,7 @@ class _InfoRow extends StatelessWidget {
             value,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              fontFamily: 'monospace',
+              fontFamily: 'Inter',
             ),
           ),
         ],
@@ -540,7 +541,7 @@ class _CostsBreakdown extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _InfoRow(
-          label: 'Prix d’achat',
+          label: 'Prix d\u2019achat',
           value: '\u20ac${product.purchasePrice.toStringAsFixed(2)}',
         ),
         if (product.vintedFees > 0)
@@ -607,8 +608,8 @@ class _Timeline extends StatelessWidget {
           // Bought
           _TimelineStep(
             icon: Icons.shopping_bag_outlined,
-            iconColor: const Color(0xFF1565C0),
-            iconBgColor: const Color(0xFFE3F2FD),
+            iconColor: const Color(0xFF0D7377),
+            iconBgColor: const Color(0xFFE6FFFB),
             label: 'Acheté',
             date: dateFormat.format(product.purchaseDate),
             isLast: product.status == 'bought',
@@ -622,8 +623,8 @@ class _Timeline extends StatelessWidget {
               product.status == 'sold')
             _TimelineStep(
               icon: Icons.sell_outlined,
-              iconColor: const Color(0xFFE65100),
-              iconBgColor: const Color(0xFFFFF3E0),
+              iconColor: const Color(0xFF9C4221),
+              iconBgColor: const Color(0xFFFFEAD6),
               label: 'En ligne',
               date: product.listingPrice != null
                   ? '\u20ac${product.listingPrice!.toStringAsFixed(2)}'
@@ -637,8 +638,8 @@ class _Timeline extends StatelessWidget {
           if (product.status == 'sold')
             _TimelineStep(
               icon: Icons.check_circle_outlined,
-              iconColor: const Color(0xFF2E7D32),
-              iconBgColor: const Color(0xFFE8F5E9),
+              iconColor: const Color(0xFF276749),
+              iconBgColor: const Color(0xFFE6F7EE),
               label: 'Vendu',
               date: product.saleDate != null
                   ? dateFormat.format(product.saleDate!)
@@ -727,7 +728,7 @@ class _TimelineStep extends StatelessWidget {
                   Text(
                     date,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
+                      fontFamily: 'Inter',
                       color: theme.colorScheme.onSurface
                           .withValues(alpha: 0.5),
                     ),
@@ -779,7 +780,7 @@ class _ActionButtons extends StatelessWidget {
               icon: const Icon(Icons.sell_outlined, size: 18),
               label: const Text('Mettre en ligne'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE65100),
+                backgroundColor: const Color(0xFF9C4221),
                 foregroundColor: Colors.white,
               ),
             ),
@@ -792,7 +793,7 @@ class _ActionButtons extends StatelessWidget {
               icon: const Icon(Icons.check_circle_outline, size: 18),
               label: const Text('Marquer comme vendu'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E7D32),
+                backgroundColor: const Color(0xFF276749),
                 foregroundColor: Colors.white,
               ),
             ),

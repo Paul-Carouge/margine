@@ -161,7 +161,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: colorScheme.outline,
                 ),
@@ -323,7 +323,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
               onSelectionChanged: (v) =>
                   setState(() => _status = v.first),
               style: SegmentedButton.styleFrom(
-                selectedBackgroundColor: colorScheme.primary.withValues(alpha: 0.2),
+                selectedBackgroundColor: colorScheme.primary.withValues(alpha: 0.12),
                 selectedForegroundColor: colorScheme.primary,
               ),
             ),
@@ -419,7 +419,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEEF9D0),
+                  color: const Color(0xFFB8860B).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -436,7 +436,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        fontFamily: 'monospace',
+                        fontFamily: 'Inter',
                         color: _netProfit >= 0
                             ? const Color(0xFF2E7D32)
                             : const Color(0xFFC62828),
@@ -468,7 +468,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
               child: Container(
                 height: 140,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: colorScheme.outline,
                     width: 1.5,
@@ -479,7 +479,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
                         fit: StackFit.expand,
                         children: [
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(11),
+                            borderRadius: BorderRadius.circular(9),
                             child: Image.file(
                               File(_photoPath!),
                               fit: BoxFit.cover,
@@ -514,7 +514,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
                             SizedBox(height: 6),
                             Text(
                               'Ajouter une photo',
-                              style: TextStyle(fontSize: 14),
+                              style: TextStyle(fontSize: 14, fontFamily: 'Inter'),
                             ),
                           ],
                         ),
@@ -533,7 +533,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
                   backgroundColor: colorScheme.primary,
                   foregroundColor: colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: _isLoading
@@ -550,6 +550,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
+                          fontFamily: 'Inter',
                         ),
                       ),
               ),
@@ -803,12 +804,12 @@ class _DatePickerField extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: Theme.of(context).colorScheme.outline,
           ),

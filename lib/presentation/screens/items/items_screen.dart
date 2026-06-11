@@ -10,6 +10,7 @@ import 'package:drift/drift.dart' hide Column;
 import '../../providers/app_providers.dart';
 import '../../../data/database/app_database.dart';
 import '../../widgets/profit_display.dart';
+
 /// Items screen — full list of all products with filtering and swipe actions.
 class ItemsScreen extends ConsumerStatefulWidget {
   const ItemsScreen({super.key});
@@ -120,10 +121,11 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
                             HapticFeedback.lightImpact();
                             setState(() => _selectedFilter = filter);
                           },
-                          selectedColor: colorScheme.primary.withValues(alpha: 0.2),
+                          selectedColor: colorScheme.primary.withValues(alpha: 0.15),
                           checkmarkColor: colorScheme.primary,
                           labelStyle: TextStyle(
                             fontSize: 13,
+                            fontFamily: 'Inter',
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w400,
                             color: isSelected
@@ -131,7 +133,7 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
                                 : colorScheme.onSurface,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           side: BorderSide(
                             color: isSelected
@@ -170,7 +172,7 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
                     fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
                     ),
                   ),
@@ -203,7 +205,7 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
                           items: SortOption.values.map((option) {
                             return DropdownMenuItem(
                               value: option,
-                              child: Text(sortLabel(option), style: const TextStyle(fontSize: 13)),
+                              child: Text(sortLabel(option), style: const TextStyle(fontSize: 13, fontFamily: 'Inter')),
                             );
                           }).toList(),
                           onChanged: (value) {
@@ -380,15 +382,15 @@ class _ItemCard extends StatelessWidget {
         : null;
 
     final statusColor = switch (product.status) {
-      'sold' => const Color(0xFF2E7D32),
-      'listed' => const Color(0xFFE65100),
-      _ => const Color(0xFF1565C0),
+      'sold' => const Color(0xFF276749),
+      'listed' => const Color(0xFF9C4221),
+      _ => const Color(0xFF0D7377),
     };
 
     final statusBgColor = switch (product.status) {
-      'sold' => const Color(0xFFE8F5E9),
-      'listed' => const Color(0xFFFFF3E0),
-      _ => const Color(0xFFE3F2FD),
+      'sold' => const Color(0xFFE6F7EE),
+      'listed' => const Color(0xFFFFEAD6),
+      _ => const Color(0xFFE6FFFB),
     };
 
     final statusLabel = switch (product.status) {
@@ -410,8 +412,8 @@ class _ItemCard extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
-          color: const Color(0xFF2E7D32),
-          borderRadius: BorderRadius.circular(12),
+          color: const Color(0xFF276749),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -425,6 +427,7 @@ class _ItemCard extends StatelessWidget {
                 color: Colors.white,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
+                fontFamily: 'Inter',
               ),
             ),
           ],
@@ -438,7 +441,7 @@ class _ItemCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: theme.cardTheme.color,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -494,6 +497,7 @@ class _ItemCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
+                                fontFamily: 'Inter',
                                 color: colorScheme.primary,
                               ),
                             ),
@@ -507,7 +511,7 @@ class _ItemCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: statusBgColor,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -519,6 +523,7 @@ class _ItemCard extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
+                                  fontFamily: 'Inter',
                                   color: statusColor,
                                 ),
                               ),
@@ -556,7 +561,7 @@ class _ItemCard extends StatelessWidget {
                           Text(
                             'Vente : \u20ac${product.salePrice!.toStringAsFixed(2)}',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF2E7D32),
+                              color: const Color(0xFF276749),
                             ),
                           ),
                         ],
@@ -595,9 +600,9 @@ class _PhotoFallback extends StatelessWidget {
     return Container(
       width: 56,
       height: 56,
-      decoration: const BoxDecoration(
-        color: Color(0xFFF0F0F0),
-        borderRadius: BorderRadius.all(Radius.circular(12)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F3F0),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
       ),
       child: Icon(
         Icons.inventory_2_outlined,
@@ -629,13 +634,14 @@ class _EmptyItems extends StatelessWidget {
             Icon(
               Icons.inventory_2_outlined,
               size: 80,
-              color: colorScheme.primary.withValues(alpha: 0.5),
+              color: colorScheme.primary.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 24),
             Text(
               'Aucun article pour l\'instant',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -655,7 +661,7 @@ class _EmptyItems extends StatelessWidget {
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),

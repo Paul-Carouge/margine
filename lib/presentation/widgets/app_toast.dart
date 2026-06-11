@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 /// The type of toast to display.
 enum ToastType { success, error, info }
 
-/// Shows a styled Apple-style overlay toast that slides up from the bottom.
+/// Shows a styled overlay toast with amethyst/gold theme, sliding up from bottom.
 ///
 /// Automatically dismisses after 3 seconds. Includes haptic feedback:
 /// - [ToastType.success]: medium impact
@@ -104,23 +104,23 @@ class _AppToastOverlayState extends State<_AppToastOverlay>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isLight = theme.brightness == Brightness.light;
 
     final (Color bgColor, Color iconColor, IconData iconData) =
         switch (widget.type) {
       ToastType.success => (
-          colorScheme.primaryContainer,
-          colorScheme.primary,
+          isLight ? const Color(0xFF2D2B55) : const Color(0xFF818CF8),
+          Colors.white,
           Icons.check_circle_rounded,
         ),
       ToastType.error => (
-          colorScheme.errorContainer,
-          colorScheme.error,
+          const Color(0xFFC62828),
+          Colors.white,
           Icons.error_outline_rounded,
         ),
       ToastType.info => (
-          colorScheme.surfaceContainerHighest,
-          colorScheme.primary,
+          isLight ? const Color(0xFFB8860B) : const Color(0xFFF5A623),
+          Colors.white,
           Icons.info_outline_rounded,
         ),
     };

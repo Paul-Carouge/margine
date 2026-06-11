@@ -26,9 +26,10 @@ class DashboardScreen extends ConsumerWidget {
         title: Text(
           'M A R G I N E',
           style: TextStyle(
+            fontFamily: 'Sora',
             fontSize: 22,
             fontWeight: FontWeight.w800,
-            letterSpacing: 3.0,
+            letterSpacing: 3.3,
             color: colorScheme.primary,
           ),
         ),
@@ -117,8 +118,8 @@ class _DashboardContent extends StatelessWidget {
         : 0.0;
     final goalBarColor = switch (goalPercentage) {
       >= 1.0 => const Color(0xFF2E7D32),
-      >= 0.75 => const Color(0xFF558B2F),
-      >= 0.5 => const Color(0xFFF9A825),
+      >= 0.75 => const Color(0xFF4CAF50),
+      >= 0.5 => const Color(0xFFB8860B),
       _ => colorScheme.primary,
     };
 
@@ -200,7 +201,7 @@ class _DashboardContent extends StatelessWidget {
                           height: 12,
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest,
+                            color: colorScheme.outline.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: FractionallySizedBox(
@@ -236,7 +237,7 @@ class _DashboardContent extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest,
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -357,7 +358,7 @@ class _KpiCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+        color: colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -372,6 +373,7 @@ class _KpiCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
+                  fontFamily: 'Inter',
                   color: valueColor.withValues(alpha: 0.8),
                 ),
               ),
@@ -383,7 +385,7 @@ class _KpiCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              fontFamily: 'monospace',
+              fontFamily: 'Inter',
               color: valueColor,
             ),
           ),
@@ -427,7 +429,7 @@ class _StatItem extends StatelessWidget {
             value,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
-              fontFamily: 'monospace',
+              fontFamily: 'Inter',
             ),
           ),
           const SizedBox(height: 2),
@@ -476,18 +478,18 @@ class _RecentItemCard extends StatelessWidget {
     final (Color chipBg, Color chipFg, String statusLabel) =
         switch (product.status) {
       'sold' => (
-          colorScheme.primary.withValues(alpha: 0.15),
-          colorScheme.primary,
+          const Color(0xFFE6F7EE),
+          const Color(0xFF276749),
           'Vendu',
         ),
       'listed' => (
-          colorScheme.tertiary.withValues(alpha: 0.15),
-          colorScheme.tertiary,
+          const Color(0xFFFFEAD6),
+          const Color(0xFF9C4221),
           'En ligne',
         ),
       _ => (
-          colorScheme.secondary.withValues(alpha: 0.12),
-          colorScheme.secondary,
+          const Color(0xFFE6FFFB),
+          const Color(0xFF0D7377),
           'Acheté',
         ),
     };
@@ -498,7 +500,7 @@ class _RecentItemCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: theme.cardTheme.color,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           children: [
@@ -517,7 +519,7 @@ class _RecentItemCard extends StatelessWidget {
                           height: 56,
                           decoration: BoxDecoration(
                             color:
-                                colorScheme.primaryContainer.withValues(alpha: 0.3),
+                                colorScheme.primary.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -532,7 +534,7 @@ class _RecentItemCard extends StatelessWidget {
                         height: 56,
                         decoration: BoxDecoration(
                           color:
-                              colorScheme.primaryContainer.withValues(alpha: 0.3),
+                              colorScheme.primary.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -578,6 +580,7 @@ class _RecentItemCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
+                              fontFamily: 'Inter',
                               color: colorScheme.primary,
                             ),
                           ),
@@ -593,13 +596,14 @@ class _RecentItemCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: chipBg,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       statusLabel,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
+                        fontFamily: 'Inter',
                         color: chipFg,
                       ),
                     ),
@@ -619,8 +623,10 @@ class _RecentItemCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      fontFamily: 'monospace',
-                      color: colorScheme.primary,
+                      fontFamily: 'Inter',
+                      color: netProfit >= 0
+                          ? const Color(0xFFB8860B)
+                          : colorScheme.error,
                     ),
                   ),
                   if (roi != null)
@@ -629,8 +635,8 @@ class _RecentItemCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        fontFamily: 'monospace',
-                        color: colorScheme.primary.withValues(alpha: 0.7),
+                        fontFamily: 'Inter',
+                        color: const Color(0xFFB8860B).withValues(alpha: 0.7),
                       ),
                     ),
                 ],
@@ -641,6 +647,7 @@ class _RecentItemCard extends StatelessWidget {
                 '—',
                 style: TextStyle(
                   fontSize: 14,
+                  fontFamily: 'Inter',
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
               ),
@@ -674,13 +681,14 @@ class _EmptyDashboard extends StatelessWidget {
             Icon(
               Icons.trending_up_rounded,
               size: 80,
-              color: colorScheme.primary,
+              color: colorScheme.primary.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 24),
             Text(
               'Aucun article pour l\'instant',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -700,7 +708,7 @@ class _EmptyDashboard extends StatelessWidget {
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),

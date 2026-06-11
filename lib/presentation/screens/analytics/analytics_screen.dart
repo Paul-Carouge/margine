@@ -67,12 +67,13 @@ class AnalyticsScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.analytics_outlined, size: 64, color: colorScheme.primary),
+            Icon(Icons.analytics_outlined, size: 64, color: colorScheme.primary.withValues(alpha: 0.4)),
             const SizedBox(height: 16),
             Text(
               'Aucune donnée à analyser',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -281,6 +282,7 @@ class _AnalyticsContent extends StatelessWidget {
                         color: colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
+                        fontFamily: 'Inter',
                       ),
                     );
                   },
@@ -298,6 +300,7 @@ class _AnalyticsContent extends StatelessWidget {
                           '\u20ac${value.toInt()}',
                           style: TextStyle(
                             fontSize: 10,
+                            fontFamily: 'Inter',
                             color: colorScheme.onSurface.withValues(alpha: 0.5),
                           ),
                         ),
@@ -322,6 +325,7 @@ class _AnalyticsContent extends StatelessWidget {
                           short,
                           style: TextStyle(
                             fontSize: 10,
+                            fontFamily: 'Inter',
                             color: colorScheme.onSurface.withValues(alpha: 0.5),
                           ),
                         ),
@@ -347,12 +351,16 @@ class _AnalyticsContent extends StatelessWidget {
               ),
               borderData: FlBorderData(show: false),
               barGroups: List.generate(monthValues.length, (i) {
+                // Use amethyst primary for positive months, gold for highest
+                final isMax = monthValues[i] >= maxProfit && maxProfit > 0;
                 return BarChartGroupData(
                   x: i,
                   barRods: [
                     BarChartRodData(
                       toY: monthValues[i].clamp(0, double.infinity),
-                      color: colorScheme.primary,
+                      color: isMax
+                          ? const Color(0xFFF5A623)
+                          : colorScheme.primary,
                       width: 24,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(6),
@@ -503,7 +511,7 @@ class _StatCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -518,6 +526,7 @@ class _StatCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
+                    fontFamily: 'Inter',
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -531,7 +540,7 @@ class _StatCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              fontFamily: 'monospace',
+              fontFamily: 'Inter',
               color: valueColor,
             ),
             maxLines: 1,
@@ -565,11 +574,11 @@ class _CategoryBreakdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chartColors = [
-      colorScheme.primary,
-      const Color(0xFFD4941A),
-      const Color(0xFF6B3FA0),
-      const Color(0xFF42A5F5),
-      const Color(0xFFEF5350),
+      colorScheme.primary,       // Amethyst
+      const Color(0xFFF5A623),   // Gold
+      const Color(0xFF38B2AC),   // Teal
+      const Color(0xFFED8936),   // Coral
+      const Color(0xFF48BB78),   // Emerald
     ];
 
     final sortedEntries = profitByCategory.entries.toList()
@@ -609,7 +618,7 @@ class _CategoryBreakdown extends StatelessWidget {
                       '\u20ac${entry.value.toStringAsFixed(2)}',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        fontFamily: 'monospace',
+                        fontFamily: 'Inter',
                         color: entry.value >= 0
                             ? const Color(0xFF2E7D32)
                             : const Color(0xFFC62828),
