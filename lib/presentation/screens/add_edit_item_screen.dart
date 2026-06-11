@@ -11,7 +11,7 @@ class AddEditItemScreen extends StatelessWidget {
     final isEditing = id != null;
     return Center(
       child: Text(
-        isEditing ? 'Edit Item #$id' : 'Add Item',
+        isEditing ? 'Modifier l\'article #$id' : 'Ajouter un article',
         style: theme.textTheme.headlineMedium,
       ),
     );

@@ -8,7 +8,7 @@ class AnalyticsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: Text(
-        'Analytics',
+        'Statistiques',
         style: theme.textTheme.headlineMedium,
       ),
     );

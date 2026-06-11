@@ -72,7 +72,7 @@ class AnalyticsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Add some items and mark them as sold\nto see your analytics.',
+              'Ajoutez des articles et marquez-les comme vendus\\npour voir vos statistiques.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -86,7 +86,7 @@ class AnalyticsScreen extends ConsumerWidget {
 
   Widget _buildError(String message, ThemeData theme) {
     return Center(
-      child: Text('Error: $message', style: theme.textTheme.bodyLarge),
+      child: Text('Erreur : $message', style: theme.textTheme.bodyLarge),
     );
   }
 
@@ -134,7 +134,7 @@ class AnalyticsScreen extends ConsumerWidget {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: 'Margine Data Export',
+          text: 'Export Margine',
         ),
       );
     } catch (e) {
@@ -204,7 +204,7 @@ class _AnalyticsContent extends StatelessWidget {
       if (entry.value > bestProfit) {
         bestProfit = entry.value;
         final cat = categories.where((c) => c.id == entry.key).firstOrNull;
-        bestCategory = cat?.name ?? 'Unknown';
+        bestCategory = cat?.name ?? 'Inconnu';
       }
     }
 
@@ -584,7 +584,7 @@ class _CategoryBreakdown extends StatelessWidget {
           final entry = sortedEntries[i];
           final catName =
               categories.where((c) => c.id == entry.key).firstOrNull?.name ??
-                  'Unknown';
+                  'Inconnu';
           final fraction = maxProfit > 0 ? entry.value / maxProfit : 0.0;
           final color = chartColors[i % chartColors.length];
 

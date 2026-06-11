@@ -10,7 +10,7 @@ class ItemDetailScreen extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: Text(
-        'Item #$id',
+        'Détail de l\'article #$id',
         style: theme.textTheme.headlineMedium,
       ),
     );

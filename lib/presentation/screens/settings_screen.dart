@@ -8,7 +8,7 @@ class SettingsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: Text(
-        'Settings',
+        'Paramètres',
         style: theme.textTheme.headlineMedium,
       ),
     );

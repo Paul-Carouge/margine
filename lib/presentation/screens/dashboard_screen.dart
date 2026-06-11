@@ -8,7 +8,7 @@ class DashboardScreen extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: Text(
-        'Dashboard',
+        'Accueil',
         style: theme.textTheme.headlineMedium,
       ),
     );

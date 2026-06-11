@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -343,25 +345,50 @@ class _RecentItemCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: theme.cardTheme.color,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            // Category icon
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.category_outlined,
-                size: 20,
-                color: colorScheme.primary,
+            // Photo thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: 56,
+                height: 56,
+                child: product.photoPath != null
+                    ? Image.file(
+                        File(product.photoPath!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.category_outlined,
+                            size: 24,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.category_outlined,
+                          size: 24,
+                          color: colorScheme.primary,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(width: 12),

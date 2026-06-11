@@ -8,7 +8,7 @@ class ItemsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: Text(
-        'Items',
+        'Articles',
         style: theme.textTheme.headlineMedium,
       ),
     );

@@ -363,7 +363,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
             ],
 
             // ── Vinted Fees ─────────────────────────────────────────────
-            _sectionLabel('Vinted Fees', theme),
+            _sectionLabel('Frais Vinted', theme),
             const SizedBox(height: 6),
             TextFormField(
               controller: _vintedFeesController,
@@ -371,14 +371,14 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(
                 prefixText: '\u20ac ',
-                hintText: 'Auto-calculated (5% of sale)',
+                hintText: 'Auto-calculé (5% de la vente)',
               ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
 
             // ── Shipping Cost ────────────────────────────────────────────
-            _sectionLabel('Shipping Cost', theme),
+            _sectionLabel('Frais de port', theme),
             const SizedBox(height: 6),
             TextFormField(
               controller: _shippingCostController,
@@ -393,7 +393,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
             const SizedBox(height: 16),
 
             // ── Packaging Cost ───────────────────────────────────────────
-            _sectionLabel('Packaging Cost', theme),
+            _sectionLabel('Emballage', theme),
             const SizedBox(height: 6),
             TextFormField(
               controller: _packagingCostController,
@@ -425,7 +425,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Net Profit',
+                      'Profit net',
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -454,7 +454,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
               controller: _notesController,
               maxLines: 3,
               decoration: const InputDecoration(
-                hintText: 'Any additional information...',
+                hintText: 'Informations complémentaires...',
               ),
             ),
             const SizedBox(height: 16),
@@ -545,7 +545,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
                         ),
                       )
                     : Text(
-                        isEditing ? 'Update Item' : 'Save Item',
+                        isEditing ? 'Mettre à jour' : 'Enregistrer',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -778,7 +778,7 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e')),
+          SnackBar(content: Text('Erreur d\'enregistrement : $e')),
         );
       }
     } finally {

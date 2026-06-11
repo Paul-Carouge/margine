@@ -70,7 +70,7 @@ class ItemDetailScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text('Error loading product: $e',
+          child: Text('Erreur de chargement : $e',
               style: theme.textTheme.bodyLarge),
         ),
       ),
@@ -104,7 +104,7 @@ class _DetailContent extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Supprimer l’article'),
         content: Text(
-            'Are you sure you want to delete "${product.name}"? This cannot be undone.'),
+            'Êtes-vous sûr de vouloir supprimer "${product.name}" ? Cette action est irréversible.'),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
@@ -585,7 +585,7 @@ class _Timeline extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Timeline',
+            'Chronologie',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -598,7 +598,7 @@ class _Timeline extends StatelessWidget {
             icon: Icons.shopping_bag_outlined,
             iconColor: const Color(0xFF1565C0),
             iconBgColor: const Color(0xFFE3F2FD),
-            label: 'Bought',
+            label: 'Acheté',
             date: dateFormat.format(product.purchaseDate),
             isLast: product.status == 'bought',
             showDivider: true,
@@ -613,7 +613,7 @@ class _Timeline extends StatelessWidget {
               icon: Icons.sell_outlined,
               iconColor: const Color(0xFFE65100),
               iconBgColor: const Color(0xFFFFF3E0),
-              label: 'Listed',
+              label: 'En ligne',
               date: product.listingPrice != null
                   ? '\u20ac${product.listingPrice!.toStringAsFixed(2)}'
                   : '—',
@@ -628,7 +628,7 @@ class _Timeline extends StatelessWidget {
               icon: Icons.check_circle_outlined,
               iconColor: const Color(0xFF2E7D32),
               iconBgColor: const Color(0xFFE8F5E9),
-              label: 'Sold',
+              label: 'Vendu',
               date: product.saleDate != null
                   ? dateFormat.format(product.saleDate!)
                   : '—',
