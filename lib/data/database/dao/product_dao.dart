@@ -56,17 +56,18 @@ class ProductDao extends DatabaseAccessor<AppDatabase> {
     final totalRevenue =
         sold.fold<double>(0, (sum, p) => sum + (p.salePrice ?? 0));
 
-    final totalCosts = sold.fold<double>(
+    final totalFees = sold.fold<double>(
       0,
       (sum, p) => sum + p.vintedFees + p.shippingCost + p.packagingCost,
     );
 
-    final totalProfit = totalRevenue - totalInvested - totalCosts;
+    final totalProfit = totalRevenue - totalInvested - totalFees;
 
     return {
       'totalInvested': totalInvested,
       'totalRevenue': totalRevenue,
       'totalProfit': totalProfit,
+      'totalFees': totalFees,
       'count': all.length,
       'soldCount': sold.length,
       'listedCount': listed.length,

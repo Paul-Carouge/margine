@@ -34,17 +34,19 @@ class HomeScreen extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // ── Compact header ──────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                child: Row(
-                  children: [
-                    Text(
-                      'Margine',
+      body: Stack(
+        children: [
+          SafeArea(
+            child: CustomScrollView(
+              slivers: [
+                // ── Compact header ────────────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    child: Row(
+                      children: [
+                        Text(
+                          "L'Établi",
                       style: textTheme.headlineLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -142,14 +144,29 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
       ),
+    ],
+  ),
 
-      // ── FAB ───────────────────────────────────────────────────────────────
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          HapticFeedback.mediumImpact();
-          context.push('/article/ajouter');
-        },
-        child: const Icon(Icons.add_rounded, size: 28),
+      // ── Full-width FAB ──────────────────────────────────────────
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+          child: SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                context.push('/article/ajouter');
+              },
+              icon: const Icon(Icons.add_rounded, size: 22),
+              label: const Text(
+                'Nouvel achat',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

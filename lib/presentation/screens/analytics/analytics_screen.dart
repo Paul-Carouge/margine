@@ -12,15 +12,17 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/database/app_database.dart';
 import '../../providers/app_providers.dart';
 
-/// Full analytics page with charts and breakdowns.
+/// Analytics screen — enriched statistics with spacing.
 class AnalyticsScreen extends ConsumerWidget {
   const AnalyticsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final statsAsync = ref.watch(dashboardStatsProvider);
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+
+    final statsAsync = ref.watch(dashboardStatsProvider);
+    final productsAsync = ref.watch(productsStreamProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -46,84 +48,134 @@ class AnalyticsScreen extends ConsumerWidget {
           final listedCount = (stats['listedCount'] as int?) ?? 0;
           final boughtCount = (stats['boughtCount'] as int?) ?? 0;
 
+          // ── Computed stats ──────────────────────────────────────────────────
+          final roi = invested > 0 ? (profit / invested * 100) : 0.0;
+          final totalFees = (stats['totalFees'] as double?) ?? 0.0;
+          final avgProfit = soldCount > 0 ? profit / soldCount : 0.0;
+
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
             children: [
-              // ── Hero number ─────────────────────────────────────────────────
+              // ── Hero number ───────────────────────────────────────────────
               Text('Résultat net', style: tt.titleMedium?.copyWith(color: cs.onSurfaceVariant)),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 '${profit >= 0 ? '+' : ''}${profit.toStringAsFixed(0)} €',
                 style: tt.displayLarge?.copyWith(
-                  color: profit >= 0 ? const Color(0xFF3A8A6C) : const Color(0xFFD94A3D),
+                  color: profit >= 0 ? MargineTheme.profitGreen : MargineTheme.lossRed,
                 ),
               ),
               const SizedBox(height: 24),
 
-              // ── Mini stat row ──────────────────────────────────────────────
+              // ── 4-stat row ─────────────────────────────────────────────────
               Row(
                 children: [
-                  _MiniStat(label: 'Ventes', value: '$soldCount', color: const Color(0xFF3A8A6C), cs: cs),
-                  _MiniStat(label: 'En ligne', value: '$listedCount', color: const Color(0xFF5B7FBF), cs: cs),
-                  _MiniStat(label: 'En stock', value: '$boughtCount', color: cs.onSurfaceVariant, cs: cs),
+                  Expanded(child: _StatCard(label: 'Ventes', value: '$soldCount', color: MargineTheme.profitGreen, cs: cs)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _StatCard(label: 'En ligne', value: '$listedCount', color: MargineTheme.statusListed, cs: cs)),
+                  const SizedBox(width: 10),
+                  Expanded(child: _StatCard(label: 'En stock', value: '$boughtCount', color: cs.onSurfaceVariant, cs: cs)),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 10),
+
+              // ── ROI card ───────────────────────────────────────────────────
+              _HighlightCard(
+                label: 'Retour sur investissement (ROI)',
+                value: roi >= 0 ? '+${roi.toStringAsFixed(1)} %' : '${roi.toStringAsFixed(1)} %',
+                color: roi >= 0 ? MargineTheme.profitGreen : MargineTheme.lossRed,
+                sublabel: '${count} article${count > 1 ? 's' : ''} · ${invested.toStringAsFixed(0)} € investis',
+                cs: cs,
+              ),
+              const SizedBox(height: 20),
 
               // ── Donut chart ────────────────────────────────────────────────
+              Text('Répartition', style: tt.titleMedium),
+              const SizedBox(height: 12),
               SizedBox(
-                height: 180,
-                child: Stack(
-                  alignment: Alignment.center,
+                height: 200,
+                child: Row(
                   children: [
-                    PieChart(
-                      PieChartData(
-                        sections: [
-                          PieChartSectionData(
-                            value: invested > 0 ? invested : 1,
-                            color: const Color(0xFFD4A74D),
-                            radius: 50,
-                            showTitle: false,
+                    Expanded(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          PieChart(
+                            PieChartData(
+                              sections: [
+                                PieChartSectionData(
+                                  value: invested > 0 ? invested : 1,
+                                  color: MargineTheme.statusSold,
+                                  radius: 55,
+                                  showTitle: false,
+                                ),
+                                PieChartSectionData(
+                                  value: profit > 0 ? profit : 1,
+                                  color: MargineTheme.profitGreen,
+                                  radius: 55,
+                                  showTitle: false,
+                                ),
+                              ],
+                              sectionsSpace: 0,
+                              centerSpaceRadius: 60,
+                            ),
                           ),
-                          PieChartSectionData(
-                            value: profit > 0 ? profit : 1,
-                            color: const Color(0xFF3A8A6C),
-                            radius: 50,
-                            showTitle: false,
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('${count} art.', style: tt.titleSmall?.copyWith(color: cs.onSurface)),
+                              const SizedBox(height: 2),
+                              Icon(Icons.inventory_2_outlined, size: 18, color: cs.onSurfaceVariant),
+                            ],
                           ),
                         ],
-                        sectionsSpace: 0,
-                        centerSpaceRadius: 55,
                       ),
                     ),
+                    const SizedBox(width: 20),
                     Column(
                       mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Total', style: tt.bodySmall),
-                        Text('${count} articles', style: tt.titleMedium),
+                        _LegendDot(color: MargineTheme.statusSold, label: 'Investi ${invested.toStringAsFixed(0)} €'),
+                        const SizedBox(height: 10),
+                        _LegendDot(color: MargineTheme.profitGreen, label: 'Profit ${profit.toStringAsFixed(0)} €'),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 28),
 
-              // ── Legend ──────────────────────────────────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _LegendDot(color: const Color(0xFFD4A74D), label: 'Investi ${invested.toStringAsFixed(0)} €'),
-                  const SizedBox(width: 20),
-                  _LegendDot(color: const Color(0xFF3A8A6C), label: 'Profit ${profit.toStringAsFixed(0)} €'),
-                ],
+              // ── Key figures ─────────────────────────────────────────────────
+              Text('Indicateurs', style: tt.titleMedium),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    _DataRow(label: 'Revenu total', value: '${revenue.toStringAsFixed(2)} €', color: MargineTheme.profitGreen),
+                    const Divider(height: 20),
+                    _DataRow(label: 'Total investi', value: '${invested.toStringAsFixed(2)} €', color: cs.onSurface),
+                    const Divider(height: 20),
+                    _DataRow(label: 'Frais totaux', value: '${totalFees.toStringAsFixed(2)} €', color: cs.onSurfaceVariant),
+                    const Divider(height: 20),
+                    _DataRow(label: 'Profit moyen / vente', value: '${avgProfit.toStringAsFixed(2)} €', color: MargineTheme.statusSold),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // ── Best & worst margin ─────────────────────────────────────────
+              productsAsync.when(
+                data: (products) => _BestWorstSection(products: products, cs: cs, tt: tt),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 32),
-
-              // ── Revenue breakdown ───────────────────────────────────────────
-              Text('Détail', style: tt.titleMedium),
-              const SizedBox(height: 12),
-              _BreakdownRow(label: 'Total investi', value: '${invested.toStringAsFixed(2)} €', color: cs.onSurface),
-              _BreakdownRow(label: 'Revenu total', value: '${revenue.toStringAsFixed(2)} €', color: const Color(0xFF3A8A6C)),
             ],
           );
         },
@@ -136,57 +188,122 @@ class AnalyticsScreen extends ConsumerWidget {
   Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
     final dao = ref.read(productDaoProvider);
     final products = await dao.getAll();
-
     final buffer = StringBuffer();
     buffer.writeln('Nom;Statut;Prix achat;Prix vente;Frais Vinted;Frais envoi;Frais emballage;Marge;Date achat;Date vente');
-
     for (final p in products) {
       final profit = p.status == 'sold' && p.salePrice != null
           ? (p.salePrice! - p.purchasePrice - p.vintedFees - p.shippingCost - p.packagingCost).toStringAsFixed(2)
           : '-';
-      buffer.writeln(
-        '${p.name};${p.status};${p.purchasePrice};${p.salePrice ?? '-'};${p.vintedFees};${p.shippingCost};${p.packagingCost};$profit;${p.purchaseDate.toIso8601String()};${p.saleDate?.toIso8601String() ?? '-'}',
-      );
+      buffer.writeln('${p.name};${p.status};${p.purchasePrice};${p.salePrice ?? '-'};${p.vintedFees};${p.shippingCost};${p.packagingCost};$profit;${p.purchaseDate.toIso8601String()};${p.saleDate?.toIso8601String() ?? '-'}');
     }
-
     final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/margine-export.csv');
+    final file = File('${dir.path}/letabli-export.csv');
     await file.writeAsString(buffer.toString());
-
-    await Share.shareXFiles([XFile(file.path)], text: 'Export Margine');
+    await Share.shareXFiles([XFile(file.path)], text: 'Export L\'Établi');
     HapticFeedback.mediumImpact();
   }
 }
 
-class _MiniStat extends StatelessWidget {
+// ── Widgets ─────────────────────────────────────────────────────────────────
+
+class _StatCard extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
   final ColorScheme cs;
 
-  const _MiniStat({
+  const _StatCard({required this.label, required this.value, required this.color, required this.cs});
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        children: [
+          Text(value, style: tt.titleLarge?.copyWith(color: color, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 2),
+          Text(label, style: tt.bodySmall),
+        ],
+      ),
+    );
+  }
+}
+
+class _HighlightCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final String sublabel;
+  final ColorScheme cs;
+
+  const _HighlightCard({
     required this.label,
     required this.value,
     required this.color,
+    required this.sublabel,
     required this.cs,
   });
 
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          children: [
-            Text(value, style: tt.headlineMedium?.copyWith(color: color, fontWeight: FontWeight.w700)),
-            Text(label, style: tt.bodySmall),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+              const SizedBox(height: 2),
+              Text(value, style: tt.headlineMedium?.copyWith(color: color, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(sublabel, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DataRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _DataRow({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: tt.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          Text(value, style: tt.titleSmall?.copyWith(color: color)),
+        ],
       ),
     );
   }
@@ -204,30 +321,115 @@ class _LegendDot extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 6),
+        const SizedBox(width: 8),
         Text(label, style: tt.bodySmall),
       ],
     );
   }
 }
 
-class _BreakdownRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
+class _BestWorstSection extends StatelessWidget {
+  final List<Product> products;
+  final ColorScheme cs;
+  final TextTheme tt;
 
-  const _BreakdownRow({required this.label, required this.value, required this.color});
+  const _BestWorstSection({
+    required this.products,
+    required this.cs,
+    required this.tt,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sold = products.where((p) => p.status == 'sold' && p.salePrice != null).toList();
+    if (sold.isEmpty) return const SizedBox.shrink();
+
+    // Calculate profit for each sold product
+    final withProfit = sold.map((p) {
+      final profit = p.salePrice! - p.purchasePrice - p.vintedFees - p.shippingCost - p.packagingCost;
+      final marginPct = p.purchasePrice > 0 ? (profit / p.purchasePrice * 100) : 0.0;
+      return (product: p, profit: profit, marginPct: marginPct);
+    }).toList();
+
+    withProfit.sort((a, b) => b.marginPct.compareTo(a.marginPct));
+    final best = withProfit.first;
+    final worst = withProfit.last;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Meilleures & pires marges', style: tt.titleMedium),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _MarginCard(
+                label: 'Meilleure marge',
+                product: best.product,
+                margin: best.marginPct,
+                profit: best.profit,
+                color: MargineTheme.profitGreen,
+                cs: cs,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _MarginCard(
+                label: 'Plus faible marge',
+                product: worst.product,
+                margin: worst.marginPct,
+                profit: worst.profit,
+                color: worst.profit >= 0 ? MargineTheme.profitGreen : MargineTheme.lossRed,
+                cs: cs,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _MarginCard extends StatelessWidget {
+  final String label;
+  final Product product;
+  final double margin;
+  final double profit;
+  final Color color;
+  final ColorScheme cs;
+
+  const _MarginCard({
+    required this.label,
+    required this.product,
+    required this.margin,
+    required this.profit,
+    required this.color,
+    required this.cs,
+  });
 
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: tt.bodyMedium),
-          Text(value, style: tt.titleSmall?.copyWith(color: color)),
+          Text(label, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+          const SizedBox(height: 6),
+          Text(
+            '${profit >= 0 ? '+' : ''}${profit.toStringAsFixed(0)} €',
+            style: tt.titleLarge?.copyWith(color: color, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 2),
+          Text('+${margin.toStringAsFixed(0)} %', style: TextStyle(color: color, fontSize: 12)),
+          const SizedBox(height: 4),
+          Text(product.name, style: tt.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );
