@@ -101,7 +101,8 @@ class _DashboardContent extends StatelessWidget {
     final soldCount = (stats['soldCount'] as int?) ?? 0;
     final totalInvested = (stats['totalInvested'] as double?) ?? 0.0;
     final roi = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0.0;
-    final totalQuantity = products.fold<int>(0, (sum, p) => sum + (p.quantity > 0 ? p.quantity : 1));
+    final totalQuantity =
+        products.fold<int>(0, (sum, p) => sum + (p.quantity > 0 ? p.quantity : 1));
 
     // Last 5 recent items
     final recentItems = products.take(5).toList();
@@ -116,13 +117,10 @@ class _DashboardContent extends StatelessWidget {
               child: _KpiCard(
                 title: 'Profit total',
                 value: '\u20ac${totalProfit.toStringAsFixed(2)}',
-                valueColor: totalProfit >= 0
-                    ? const Color(0xFF2E7D32)
-                    : const Color(0xFFC62828),
-                backgroundColor: totalProfit >= 0
-                    ? const Color(0xFFEEF9D0)
-                    : const Color(0xFFFFEBEE),
+                isPositive: totalProfit >= 0,
                 icon: Icons.trending_up,
+                colorScheme: colorScheme,
+                theme: theme,
               ),
             ),
             const SizedBox(width: 12),
@@ -130,13 +128,10 @@ class _DashboardContent extends StatelessWidget {
               child: _KpiCard(
                 title: 'ROI',
                 value: '${roi.toStringAsFixed(1)}%',
-                valueColor: roi >= 0
-                    ? const Color(0xFF2E7D32)
-                    : const Color(0xFFC62828),
-                backgroundColor: Color(
-                  roi >= 0 ? 0xFFEEF9D0 : 0xFFFFEBEE,
-                ),
+                isPositive: roi >= 0,
                 icon: Icons.percent,
+                colorScheme: colorScheme,
+                theme: theme,
               ),
             ),
           ],
@@ -145,17 +140,37 @@ class _DashboardContent extends StatelessWidget {
 
         // Stats row
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
           decoration: BoxDecoration(
-            color: theme.cardTheme.color,
+            color: colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _StatItem(label: 'Articles', value: '$totalQuantity'),
-              _StatItem(label: 'Vendus', value: '$soldCount'),
-              _StatItem(label: 'Actifs', value: '${count - soldCount}'),
+              Expanded(
+                child: _StatItem(
+                  icon: Icons.inventory_2_outlined,
+                  value: '$totalQuantity',
+                  label: 'Articles',
+                  colorScheme: colorScheme,
+                ),
+              ),
+              Expanded(
+                child: _StatItem(
+                  icon: Icons.sell_outlined,
+                  value: '$soldCount',
+                  label: 'Vendus',
+                  colorScheme: colorScheme,
+                ),
+              ),
+              Expanded(
+                child: _StatItem(
+                  icon: Icons.check_circle_outline,
+                  value: '${count - soldCount}',
+                  label: 'Actifs',
+                  colorScheme: colorScheme,
+                ),
+              ),
             ],
           ),
         ),
@@ -207,24 +222,29 @@ class _DashboardContent extends StatelessWidget {
 class _KpiCard extends StatelessWidget {
   final String title;
   final String value;
-  final Color valueColor;
-  final Color backgroundColor;
+  final bool isPositive;
   final IconData icon;
+  final ColorScheme colorScheme;
+  final ThemeData theme;
 
   const _KpiCard({
     required this.title,
     required this.value,
-    required this.valueColor,
-    required this.backgroundColor,
+    required this.isPositive,
     required this.icon,
+    required this.colorScheme,
+    required this.theme,
   });
 
   @override
   Widget build(BuildContext context) {
+    final valueColor =
+        isPositive ? colorScheme.primary : colorScheme.error;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: colorScheme.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -261,41 +281,57 @@ class _KpiCard extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Stat item (small label + value in the stats row)
+// Stat item (icon + number + label for the stats row)
 // ---------------------------------------------------------------------------
 
 class _StatItem extends StatelessWidget {
-  final String label;
+  final IconData icon;
   final String value;
+  final String label;
+  final ColorScheme colorScheme;
 
-  const _StatItem({required this.label, required this.value});
+  const _StatItem({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.colorScheme,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Column(
-      children: [
-        Text(
-          value,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            fontFamily: 'monospace',
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: colorScheme.onSurface.withValues(alpha: 0.5),
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              fontFamily: 'monospace',
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Recent item card (compact)
+// Recent item card (compact, with photo)
 // ---------------------------------------------------------------------------
 
 class _RecentItemCard extends StatelessWidget {
@@ -324,22 +360,23 @@ class _RecentItemCard extends StatelessWidget {
         ? (netProfit / product.purchasePrice) * 100
         : null;
 
-    final statusColor = switch (product.status) {
-      'sold' => const Color(0xFF2E7D32),
-      'listed' => const Color(0xFFE65100),
-      _ => const Color(0xFF1565C0),
-    };
-
-    final statusBgColor = switch (product.status) {
-      'sold' => const Color(0xFFE8F5E9),
-      'listed' => const Color(0xFFFFF3E0),
-      _ => const Color(0xFFE3F2FD),
-    };
-
-    final statusLabel = switch (product.status) {
-      'sold' => 'Vendu',
-      'listed' => 'En ligne',
-      _ => 'Acheté',
+    final (Color chipBg, Color chipFg, String statusLabel) =
+        switch (product.status) {
+      'sold' => (
+          colorScheme.primary.withValues(alpha: 0.15),
+          colorScheme.primary,
+          'Vendu',
+        ),
+      'listed' => (
+          colorScheme.tertiary.withValues(alpha: 0.15),
+          colorScheme.tertiary,
+          'En ligne',
+        ),
+      _ => (
+          colorScheme.secondary.withValues(alpha: 0.12),
+          colorScheme.secondary,
+          'Acheté',
+        ),
     };
 
     return GestureDetector(
@@ -366,7 +403,8 @@ class _RecentItemCard extends StatelessWidget {
                           width: 56,
                           height: 56,
                           decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                            color:
+                                colorScheme.primaryContainer.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -380,7 +418,8 @@ class _RecentItemCard extends StatelessWidget {
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                          color:
+                              colorScheme.primaryContainer.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -433,14 +472,14 @@ class _RecentItemCard extends StatelessWidget {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
-                      vertical: 2,
+                      vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: statusBgColor,
+                      color: chipBg,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -448,7 +487,7 @@ class _RecentItemCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: statusColor,
+                        color: chipFg,
                       ),
                     ),
                   ),
@@ -468,7 +507,7 @@ class _RecentItemCard extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       fontFamily: 'monospace',
-                      color: const Color(0xFF2E7D32),
+                      color: colorScheme.primary,
                     ),
                   ),
                   if (roi != null)
@@ -478,7 +517,7 @@ class _RecentItemCard extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         fontFamily: 'monospace',
-                        color: const Color(0xFF2E7D32).withValues(alpha: 0.7),
+                        color: colorScheme.primary.withValues(alpha: 0.7),
                       ),
                     ),
                 ],

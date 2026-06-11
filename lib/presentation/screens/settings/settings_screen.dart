@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../../core/services/update_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../providers/app_providers.dart';
 
@@ -137,6 +138,21 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 32),
 
+          // ── Mise à jour Section ──────────────────────────────────────────
+          _SectionHeader(title: 'Mise à jour', colorScheme: colorScheme),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: theme.cardTheme.color,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: _UpdateRow(
+              onTap: () => _checkForUpdate(context),
+            ),
+          ),
+          const SizedBox(height: 32),
+
           // ── Footer ──────────────────────────────────────────────────────
           Center(
             child: Text(
@@ -149,6 +165,25 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _checkForUpdate(BuildContext context) {
+    // Read version from the context — or use a hardcoded constant
+    const currentVersion = '1.4.0';
+    UpdateService.checkForUpdate(currentVersion).then((update) {
+      if (!context.mounted) return;
+      if (update != null) {
+        UpdateService.showUpdateDialog(
+          context,
+          update['version']!,
+          update['url']!,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vous êtes à jour')),
+        );
+      }
+    });
   }
 
   Future<void> _exportAllData(BuildContext context, WidgetRef ref) async {
@@ -555,6 +590,81 @@ class _AboutGitHubRow extends StatelessWidget {
               Icons.open_in_new,
               size: 16,
               color: colorScheme.primary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Update check row
+// -----------------------------------------------------------------------------
+
+class _UpdateRow extends StatelessWidget {
+  const _UpdateRow({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.system_update_outlined,
+                size: 20,
+                color: colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Vérifier les mises à jour',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '1.4.0',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.primary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
           ],
         ),
