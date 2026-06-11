@@ -1,749 +1,236 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/services/update_service.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../providers/app_providers.dart';
-import '../../widgets/app_toast.dart';
 
-/// Settings screen — apparence, données, and à propos sections.
+/// Settings screen — theme toggle, goal, data, about.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final themeMode = ref.watch(themeModeProvider);
-    final monthlyGoal = ref.watch(monthlyGoalProvider);
+    final goal = ref.watch(monthlyGoalProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Paramètres'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => context.pop(),
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
-          // ── Apparence Section ───────────────────────────────────────────
-          _SectionHeader(title: 'Apparence', colorScheme: colorScheme),
+          // ── Theme ───────────────────────────────────────────────────────────
+          _SectionHeader(label: 'Affichage'),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
-              borderRadius: BorderRadius.circular(16),
-            ),
+          Card(
             child: Column(
               children: [
-                _ThemeOption(
-                  label: 'Clair',
-                  icon: Icons.light_mode_outlined,
-                  selected: themeMode == ThemeMode.light,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(themeModeProvider.notifier).state =
-                        ThemeMode.light;
-                  },
+                RadioListTile<ThemeMode>(
+                  value: ThemeMode.system,
+                  groupValue: themeMode,
+                  title: const Text('Système'),
+                  subtitle: const Text('Suit les réglages de ton téléphone'),
+                  activeColor: cs.primary,
+                  onChanged: (v) => ref.read(themeModeProvider.notifier).state = v!,
                 ),
-                const Divider(height: 1, indent: 52),
-                _ThemeOption(
-                  label: 'Sombre',
-                  icon: Icons.dark_mode_outlined,
-                  selected: themeMode == ThemeMode.dark,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(themeModeProvider.notifier).state =
-                        ThemeMode.dark;
-                  },
+                RadioListTile<ThemeMode>(
+                  value: ThemeMode.dark,
+                  groupValue: themeMode,
+                  title: const Text('Sombre'),
+                  subtitle: const Text('Mode nuit permanent'),
+                  activeColor: cs.primary,
+                  onChanged: (v) => ref.read(themeModeProvider.notifier).state = v!,
                 ),
-                const Divider(height: 1, indent: 52),
-                _ThemeOption(
-                  label: 'Système',
-                  icon: Icons.settings_suggest_outlined,
-                  selected: themeMode == ThemeMode.system,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(themeModeProvider.notifier).state =
-                        ThemeMode.system;
-                  },
+                RadioListTile<ThemeMode>(
+                  value: ThemeMode.light,
+                  groupValue: themeMode,
+                  title: const Text('Clair'),
+                  subtitle: const Text('Mode jour permanent'),
+                  activeColor: cs.primary,
+                  onChanged: (v) => ref.read(themeModeProvider.notifier).state = v!,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // ── Données Section ─────────────────────────────────────────────
-          _SectionHeader(title: 'Données', colorScheme: colorScheme),
+          // ── Monthly goal ────────────────────────────────────────────────────
+          _SectionHeader(label: 'Objectif'),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                _DataActionTile(
-                  icon: Icons.file_download_outlined,
-                  label: 'Exporter en CSV',
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    _exportAllData(context, ref);
-                  },
-                ),
-                const Divider(height: 1, indent: 52),
-                // Monthly goal row
-                _DataActionTile(
-                  icon: Icons.flag_outlined,
-                  label: 'Objectif de profit mensuel',
-                  trailing: '\u20ac${monthlyGoal.toStringAsFixed(0)}',
-                  onTap: () => _editMonthlyGoal(context, ref, monthlyGoal),
-                ),
-                const Divider(height: 1, indent: 52),
-                _DataActionTile(
-                  icon: Icons.upload_file_outlined,
-                  label: 'Importer des données',
-                  subtitle: 'Bientôt',
-                  enabled: false,
-                ),
-                const Divider(height: 1, indent: 52),
-                _DataActionTile(
-                  icon: Icons.delete_sweep_outlined,
-                  label: 'Effacer les données',
-                  subtitle: 'Bientôt',
-                  enabled: false,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // ── À propos Section ────────────────────────────────────────────
-          _SectionHeader(title: 'À propos', colorScheme: colorScheme),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                _AboutRow(
-                  icon: Icons.info_outline,
-                  label: 'Application',
-                  value: 'Margine',
-                  theme: theme,
-                  colorScheme: colorScheme,
-                ),
-                const Divider(height: 1, indent: 52),
-                _AboutRow(
-                  icon: Icons.tag_outlined,
-                  label: 'Version',
-                  value: '1.3.0',
-                  theme: theme,
-                  colorScheme: colorScheme,
-                ),
-                const Divider(height: 1, indent: 52),
-                _AboutGitHubRow(theme: theme, colorScheme: colorScheme),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // ── Mise à jour Section ──────────────────────────────────────────
-          _SectionHeader(title: 'Mise à jour', colorScheme: colorScheme),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: _UpdateRow(
-              onTap: () => _checkForUpdate(context),
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // ── Footer ──────────────────────────────────────────────────────
-          Center(
-            child: Text(
-              'Margine v1.3.0 · Suivi de revente Vinted',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _checkForUpdate(BuildContext context) {
-    HapticFeedback.lightImpact();
-    // Read version from the context — or use a hardcoded constant
-    const currentVersion = '1.4.0';
-    UpdateService.checkForUpdate(currentVersion).then((update) {
-      if (!context.mounted) return;
-      if (update != null) {
-        UpdateService.showUpdateDialog(
-          context,
-          update['version']!,
-          update['url']!,
-        );
-      } else {
-        showAppToast(context, message: 'Vous êtes à jour', type: ToastType.info);
-      }
-    });
-  }
-
-  void _editMonthlyGoal(BuildContext context, WidgetRef ref, double currentGoal) {
-    final controller = TextEditingController(text: currentGoal.toStringAsFixed(0));
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Objectif mensuel'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Montant (€)',
-            prefixText: '€ ',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final value = double.tryParse(controller.text.replaceAll(',', '.'));
-              if (value != null && value > 0) {
-                ref.read(monthlyGoalProvider.notifier).state = value;
-                Navigator.of(ctx).pop();
-                showAppToast(context, message: 'Objectif mis à jour', type: ToastType.success);
-              }
-            },
-            child: const Text('Enregistrer'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _exportAllData(BuildContext context, WidgetRef ref) async {
-    final dao = ref.read(productDaoProvider);
-    final categories = await ref.read(categoryDaoProvider).getAll();
-    final products = await dao.getAll();
-
-    if (products.isEmpty) {
-      if (context.mounted) {
-        showAppToast(context, message: 'Aucune donnée à exporter.', type: ToastType.info);
-      }
-      return;
-    }
-
-    try {
-      final buffer = StringBuffer();
-      buffer.writeln('Nom,Catégorie,Prix d\'achat,Date d\'achat,Source,'
-          'Statut,Prix annoncé,Prix de vente,Date de vente,Frais Vinted,'
-          'Frais de port,Emballage,Profit net');
-
-      for (final p in products) {
-        final cat =
-            categories.where((c) => c.id == p.categoryId).firstOrNull;
-        final netProfit = p.salePrice != null
-            ? p.salePrice! - p.purchasePrice - p.vintedFees -
-                p.shippingCost - p.packagingCost
-            : 0.0;
-        final dateFormat = DateFormat('yyyy-MM-dd');
-
-        buffer.writeln(
-          '"${p.name.replaceAll('"', '""')}",'
-          '"${(cat?.name ?? 'Non catégorisé').replaceAll('"', '""')}",'
-          '${p.purchasePrice.toStringAsFixed(2)},'
-          '${dateFormat.format(p.purchaseDate)},'
-          '"${p.source.replaceAll('"', '""')}",'
-          '${p.status},'
-          '${p.listingPrice?.toStringAsFixed(2) ?? ''},'
-          '${p.salePrice?.toStringAsFixed(2) ?? ''},'
-          '${p.saleDate != null ? dateFormat.format(p.saleDate!) : ''},'
-          '${p.vintedFees.toStringAsFixed(2)},'
-          '${p.shippingCost.toStringAsFixed(2)},'
-          '${p.packagingCost.toStringAsFixed(2)},'
-          '${netProfit.toStringAsFixed(2)}',
-        );
-      }
-
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/margine_export.csv');
-      await file.writeAsString(buffer.toString());
-
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path)],
-          text: 'Export Margine',
-        ),
-      );
-    } catch (e) {
-      if (context.mounted) {
-        showAppToast(context, message: 'Échec de l\'export : $e', type: ToastType.error);
-      }
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Section header
-// -----------------------------------------------------------------------------
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.title,
-    required this.colorScheme,
-  });
-
-  final String title;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 24,
-          height: 2,
-          decoration: BoxDecoration(
-            color: colorScheme.primary,
-            borderRadius: BorderRadius.circular(1),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-        ),
-      ],
-    );
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Theme option tile
-// -----------------------------------------------------------------------------
-
-class _ThemeOption extends StatelessWidget {
-  const _ThemeOption({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: selected
-                    ? colorScheme.primary.withValues(alpha: 0.1)
-                    : colorScheme.outline.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: selected
-                    ? colorScheme.primary
-                    : colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  color: selected
-                      ? colorScheme.onSurface
-                      : colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-              ),
-            ),
-            if (selected)
-              Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check,
-                  size: 14,
-                  color: Colors.white,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Data action tile
-// -----------------------------------------------------------------------------
-
-class _DataActionTile extends StatelessWidget {
-  const _DataActionTile({
-    required this.icon,
-    required this.label,
-    this.subtitle,
-    this.trailing,
-    this.enabled = true,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final String? subtitle;
-  final String? trailing;
-  final bool enabled;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: enabled
-                    ? colorScheme.primary.withValues(alpha: 0.1)
-                    : colorScheme.outline.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: enabled
-                    ? colorScheme.primary
-                    : colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text('Objectif mensuel', style: tt.titleSmall),
+                  const SizedBox(height: 4),
                   Text(
-                    label,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: enabled
-                          ? colorScheme.onSurface
-                          : colorScheme.onSurface.withValues(alpha: 0.4),
-                    ),
+                    '${goal.toStringAsFixed(0)} € de marge',
+                    style: tt.headlineMedium?.copyWith(color: cs.primary),
                   ),
-                  if (subtitle != null)
-                    const SizedBox(height: 2),
-                  if (subtitle != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        subtitle!,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Inter',
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                    ),
+                  const SizedBox(height: 8),
+                  Slider(
+                    value: goal.clamp(0, 2000),
+                    min: 0,
+                    max: 2000,
+                    divisions: 40,
+                    activeColor: cs.primary,
+                    label: '${goal.round()} €',
+                    onChanged: (v) => ref.read(monthlyGoalProvider.notifier).state = v,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('0 €', style: tt.bodySmall),
+                      Text('2 000 €', style: tt.bodySmall),
+                    ],
+                  ),
                 ],
               ),
             ),
-            if (enabled || trailing != null)
-              trailing != null
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        trailing!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Inter',
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                    )
-                  : Icon(
-                      Icons.chevron_right,
-                      size: 20,
-                      color: colorScheme.onSurface.withValues(alpha: 0.3),
-                    ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+          ),
+          const SizedBox(height: 20),
 
-// -----------------------------------------------------------------------------
-// About row
-// -----------------------------------------------------------------------------
-
-class _AboutRow extends StatelessWidget {
-  const _AboutRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.theme,
-    required this.colorScheme,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final ThemeData theme;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: colorScheme.primary,
+          // ── Data ────────────────────────────────────────────────────────────
+          _SectionHeader(label: 'Données'),
+          const SizedBox(height: 8),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Icon(Icons.file_download_outlined, color: cs.primary),
+                  title: const Text('Exporter en CSV'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _exportCsv(context, ref),
+                ),
+                Divider(indent: 56, height: 1, color: cs.outlineVariant),
+                ListTile(
+                  leading: Icon(Icons.info_outline, color: cs.primary),
+                  title: const Text('Vérifier les mises à jour'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _checkUpdate(context),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
+          const SizedBox(height: 20),
+
+          // ── About ───────────────────────────────────────────────────────────
+          _SectionHeader(label: 'À propos'),
+          const SizedBox(height: 8),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Icon(Icons.code, color: cs.primary),
+                  title: const Text('Version'),
+                  trailing: Text('2.0.0', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                ),
+                Divider(indent: 56, height: 1, color: cs.outlineVariant),
+                ListTile(
+                  leading: const Icon(Icons.favorite_outline, color: Color(0xFFD94A3D)),
+                  title: const Text('Paul Carouge · Orion Team'),
+                  subtitle: const Text('Construit avec Flutter'),
+                ),
+              ],
             ),
           ),
-          Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
-}
 
-// -----------------------------------------------------------------------------
-// About GitHub row
-// -----------------------------------------------------------------------------
+  Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
+    final dao = ref.read(productDaoProvider);
+    final products = await dao.getAll();
+    final buffer = StringBuffer();
+    buffer.writeln('Nom;Statut;Prix achat;Prix vente;Frais Vinted;Frais envoi;Frais emballage;Marge;Date achat;Date vente');
+    for (final p in products) {
+      final profit = p.status == 'sold' && p.salePrice != null
+          ? (p.salePrice! - p.purchasePrice - p.vintedFees - p.shippingCost - p.packagingCost).toStringAsFixed(2)
+          : '-';
+      buffer.writeln('${p.name};${p.status};${p.purchasePrice};${p.salePrice ?? '-'};${p.vintedFees};${p.shippingCost};${p.packagingCost};$profit;${p.purchaseDate.toIso8601String()};${p.saleDate?.toIso8601String() ?? '-'}');
+    }
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/margine-export.csv');
+    await file.writeAsString(buffer.toString());
+    await Share.shareXFiles([XFile(file.path)], text: 'Export Margine');
+    HapticFeedback.mediumImpact();
+  }
 
-class _AboutGitHubRow extends StatelessWidget {
-  const _AboutGitHubRow({
-    required this.theme,
-    required this.colorScheme,
-  });
+  Future<void> _checkUpdate(BuildContext context) async {
+    final cs = Theme.of(context).colorScheme;
+    try {
+      final uri = Uri.parse('https://api.github.com/repos/Paul-Carouge/margine/releases/latest');
+      final client = HttpClient();
+      final request = await client.getUrl(uri);
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
 
-  final ThemeData theme;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        showAppToast(context, message: 'https://github.com/paulcarouge/margine', type: ToastType.info);
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFF333333).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.code_outlined,
-                size: 20,
-                color: Color(0xFF333333),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'GitHub',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
+      if (body.contains('"tag_name"')) {
+        final tag = body.split('"tag_name":"')[1].split('"')[0];
+        final current = '2.0.0';
+        if (tag.compareTo(current) > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Mise à jour disponible : $tag'),
+              action: SnackBarAction(
+                label: 'Télécharger',
+                onPressed: () => launchUrl(Uri.parse('https://github.com/Paul-Carouge/margine/releases/latest')),
               ),
             ),
-            Text(
-              'Voir le code',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.primary,
-              ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Margine est à jour'),
+              backgroundColor: const Color(0xFF3A8A6C),
             ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.open_in_new,
-              size: 16,
-              color: colorScheme.primary,
-            ),
-          ],
+          );
+        }
+      }
+      client.close();
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Impossible de vérifier'),
+          backgroundColor: cs.error,
         ),
-      ),
-    );
+      );
+    }
   }
 }
 
-// -----------------------------------------------------------------------------
-// Update check row
-// -----------------------------------------------------------------------------
-
-class _UpdateRow extends StatelessWidget {
-  const _UpdateRow({required this.onTap});
-
-  final VoidCallback onTap;
+class _SectionHeader extends StatelessWidget {
+  final String label;
+  const _SectionHeader({required this.label});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.system_update_outlined,
-                size: 20,
-                color: colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Vérifier les mises à jour',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 2,
-              ),
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '1.4.0',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Inter',
-                  color: colorScheme.primary,
-                ),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: colorScheme.onSurface.withValues(alpha: 0.3),
-            ),
-          ],
-        ),
-      ),
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Container(width: 3, height: 14, decoration: BoxDecoration(color: cs.primary, borderRadius: BorderRadius.circular(2))),
+        const SizedBox(width: 8),
+        Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13)),
+      ],
     );
   }
 }

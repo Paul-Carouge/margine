@@ -9,9 +9,6 @@ import '../../data/database/dao/product_dao.dart';
 // Database
 // ---------------------------------------------------------------------------
 
-/// Singleton provider for [AppDatabase].
-///
-/// The database is kept alive for the entire application lifecycle.
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
   ref.onDispose(() => db.close());
@@ -22,72 +19,90 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 // DAOs
 // ---------------------------------------------------------------------------
 
-/// Provider for [CategoryDao].
 final categoryDaoProvider = Provider<CategoryDao>((ref) {
-  final db = ref.watch(databaseProvider);
-  return CategoryDao(db);
+  return CategoryDao(ref.watch(databaseProvider));
 });
 
-/// Provider for [ProductDao].
 final productDaoProvider = Provider<ProductDao>((ref) {
-  final db = ref.watch(databaseProvider);
-  return ProductDao(db);
+  return ProductDao(ref.watch(databaseProvider));
 });
 
 // ---------------------------------------------------------------------------
 // Stream providers
 // ---------------------------------------------------------------------------
 
-/// Streams all products ordered by most recently updated.
 final productsStreamProvider = StreamProvider<List<Product>>((ref) {
-  final dao = ref.watch(productDaoProvider);
-  return dao.watchAll();
+  return ref.watch(productDaoProvider).watchAll();
 });
 
-/// Streams all categories ordered by name.
 final categoriesStreamProvider = StreamProvider<List<Category>>((ref) {
-  final dao = ref.watch(categoryDaoProvider);
-  return dao.watchAll();
+  return ref.watch(categoryDaoProvider).watchAll();
 });
 
-/// Streams products filtered by status.
 final productsByStatusProvider =
     StreamProvider.family<List<Product>, String>((ref, status) {
-  final dao = ref.watch(productDaoProvider);
-  return dao.watchByStatus(status);
+  return ref.watch(productDaoProvider).watchByStatus(status);
 });
 
 // ---------------------------------------------------------------------------
 // Future providers
 // ---------------------------------------------------------------------------
 
-/// Fetches aggregate dashboard statistics.
 final dashboardStatsProvider =
     FutureProvider<Map<String, dynamic>>((ref) async {
-  ref.watch(productsStreamProvider); // auto-invalidate when products change
-  final dao = ref.watch(productDaoProvider);
-  return dao.getStats();
+  ref.watch(productsStreamProvider);
+  return ref.watch(productDaoProvider).getStats();
 });
 
-/// Fetches a single product by its id.
 final productByIdProvider =
     FutureProvider.family<Product?, int>((ref, id) async {
-  final dao = ref.watch(productDaoProvider);
-  return dao.getById(id);
+  return ref.watch(productDaoProvider).getById(id);
 });
 
 // ---------------------------------------------------------------------------
 // UI State providers
 // ---------------------------------------------------------------------------
 
-/// Monthly profit goal (default €300).
 final monthlyGoalProvider = StateProvider<double>((ref) => 300.0);
-
-/// Search query for items.
+final filterStatusProvider = StateProvider<String>((ref) => 'all');
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
-/// Sort option for items.
-enum SortOption { dateDesc, dateAsc, profitDesc, profitAsc, priceDesc, priceAsc, nameAsc }
+/// Returns the display name for a status key.
+String statusLabel(String status) {
+  switch (status) {
+    case 'bought':
+      return 'En stock';
+    case 'listed':
+      return 'En ligne';
+    case 'sold':
+      return 'Vendu';
+    default:
+      return 'Tout';
+  }
+}
 
-/// Current sort option.
-final sortOptionProvider = StateProvider<SortOption>((ref) => SortOption.dateDesc);
+/// Returns the semantic color for a status key.
+int statusColorValue(String status) {
+  switch (status) {
+    case 'bought':
+      return 0xFF3A8A6C;
+    case 'listed':
+      return 0xFF5B7FBF;
+    case 'sold':
+      return 0xFFD4A74D;
+    default:
+      return 0xFF8A8A98;
+  }
+}
+
+/// Profit margin helpers.
+double profitFor(Product p) {
+  if (p.status != 'sold' || p.salePrice == null) return 0;
+  return p.salePrice! - p.purchasePrice - p.vintedFees - p.shippingCost - p.packagingCost;
+}
+
+double marginPercent(Product p) {
+  if (p.purchasePrice <= 0) return 0;
+  final profit = profitFor(p);
+  return (profit / p.purchasePrice) * 100;
+}
