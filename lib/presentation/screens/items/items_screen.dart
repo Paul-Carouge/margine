@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:drift/drift.dart' hide Column;
@@ -9,7 +10,6 @@ import 'package:drift/drift.dart' hide Column;
 import '../../providers/app_providers.dart';
 import '../../../data/database/app_database.dart';
 import '../../widgets/profit_display.dart';
-
 /// Items screen — full list of all products with filtering and swipe actions.
 class ItemsScreen extends ConsumerStatefulWidget {
   const ItemsScreen({super.key});
@@ -20,8 +20,15 @@ class ItemsScreen extends ConsumerStatefulWidget {
 
 class _ItemsScreenState extends ConsumerState<ItemsScreen> {
   String _selectedFilter = 'Tous';
+  final _searchController = TextEditingController();
 
   static const _filters = ['Tous', 'Acheté', 'En ligne', 'Vendu'];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +36,21 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
     final colorScheme = theme.colorScheme;
 
     final productsAsync = ref.watch(productsStreamProvider);
+    final searchQuery = ref.watch(searchQueryProvider);
+    final sortOption = ref.watch(sortOptionProvider);
+
+    // Helper to get sort label
+    String sortLabel(SortOption option) {
+      return switch (option) {
+        SortOption.dateDesc => 'Date (récent)',
+        SortOption.dateAsc => 'Date (ancien)',
+        SortOption.profitDesc => 'Profit ↓',
+        SortOption.profitAsc => 'Profit ↑',
+        SortOption.priceDesc => 'Prix (décroissant)',
+        SortOption.priceAsc => 'Prix (croissant)',
+        SortOption.nameAsc => 'Nom (A-Z)',
+      };
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -36,18 +58,44 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
       ),
       body: productsAsync.when(
         data: (products) {
-          final filteredProducts = _selectedFilter == 'Tous'
-              ? products
-              : products
-                  .where((p) {
-                    const filterMap = {
-                      'Acheté': 'bought',
-                      'En ligne': 'listed',
-                      'Vendu': 'sold',
-                    };
-                    return p.status == filterMap[_selectedFilter];
-                  })
-                  .toList();
+          // Apply search filter (case-insensitive on name)
+          var filteredProducts = products.where((p) {
+            final matchesStatus = _selectedFilter == 'Tous'
+                ? true
+                : switch (_selectedFilter) {
+                    'Acheté' => p.status == 'bought',
+                    'En ligne' => p.status == 'listed',
+                    'Vendu' => p.status == 'sold',
+                    _ => false,
+                  };
+            final matchesSearch = searchQuery.isEmpty ||
+                p.name.toLowerCase().contains(searchQuery.toLowerCase());
+            return matchesStatus && matchesSearch;
+          }).toList();
+
+          // Sort products
+          filteredProducts.sort((a, b) {
+            double netProfit(Product p) => p.salePrice != null
+                ? p.salePrice! - p.purchasePrice - p.vintedFees -
+                    p.shippingCost - p.packagingCost
+                : double.negativeInfinity;
+            switch (sortOption) {
+              case SortOption.dateDesc:
+                return b.updatedAt.compareTo(a.updatedAt);
+              case SortOption.dateAsc:
+                return a.updatedAt.compareTo(b.updatedAt);
+              case SortOption.profitDesc:
+                return netProfit(b).compareTo(netProfit(a));
+              case SortOption.profitAsc:
+                return netProfit(a).compareTo(netProfit(b));
+              case SortOption.priceDesc:
+                return b.purchasePrice.compareTo(a.purchasePrice);
+              case SortOption.priceAsc:
+                return a.purchasePrice.compareTo(b.purchasePrice);
+              case SortOption.nameAsc:
+                return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+            }
+          });
 
           if (products.isEmpty) {
             return _EmptyItems(colorScheme: colorScheme, theme: theme);
@@ -69,6 +117,7 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
                           label: Text(filter),
                           selected: isSelected,
                           onSelected: (_) {
+                            HapticFeedback.lightImpact();
                             setState(() => _selectedFilter = filter);
                           },
                           selectedColor: colorScheme.primary.withValues(alpha: 0.2),
@@ -96,12 +145,88 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
                 ),
               ),
 
+              // Search bar
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    ref.read(searchQueryProvider.notifier).state = value;
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Rechercher un article…',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              _searchController.clear();
+                              ref.read(searchQueryProvider.notifier).state = '';
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Sort dropdown row
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.sort, size: 18, color: colorScheme.onSurface.withValues(alpha: 0.5)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Trier par :',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<SortOption>(
+                          value: sortOption,
+                          isExpanded: false,
+                          icon: const Icon(Icons.expand_more, size: 20),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                          items: SortOption.values.map((option) {
+                            return DropdownMenuItem(
+                              value: option,
+                              child: Text(sortLabel(option), style: const TextStyle(fontSize: 13)),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              HapticFeedback.lightImpact();
+                              ref.read(sortOptionProvider.notifier).state = value;
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               // Items list
               Expanded(
                 child: filteredProducts.isEmpty
                     ? Center(
                         child: Text(
-                          'Aucun article dans cette catégorie',
+                          searchQuery.isNotEmpty
+                              ? 'Aucun résultat pour "$searchQuery"'
+                              : 'Aucun article dans cette catégorie',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: colorScheme.onSurface.withValues(alpha: 0.5),
                           ),
@@ -112,13 +237,27 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
                         itemCount: filteredProducts.length,
                         itemBuilder: (context, index) {
                           final product = filteredProducts[index];
-                          return _ItemCard(
-                            product: product,
-                            theme: theme,
-                            colorScheme: colorScheme,
-                            onTap: () =>
-                                context.push('/items/${product.id}'),
-                            onSwipe: () => _advanceStatus(product),
+                          return TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0.0, end: 1.0),
+                            duration: Duration(milliseconds: 300 + index * 60),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, value, child) => Opacity(
+                              opacity: value,
+                              child: Transform.translate(
+                                offset: Offset(0, 20 * (1 - value)),
+                                child: child,
+                              ),
+                            ),
+                            child: _ItemCard(
+                              product: product,
+                              theme: theme,
+                              colorScheme: colorScheme,
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                context.push('/items/${product.id}');
+                              },
+                              onSwipe: () => _advanceStatus(product),
+                            ),
                           );
                         },
                       ),
@@ -203,12 +342,7 @@ class _ItemsScreenState extends ConsumerState<ItemsScreen> {
         'sold' => 'Vendu',
         _ => 'Acheté',
       };
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Marqué comme $label'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      showAppToast(context, message: 'Marqué comme $label', type: ToastType.success);
     }
   }
 }

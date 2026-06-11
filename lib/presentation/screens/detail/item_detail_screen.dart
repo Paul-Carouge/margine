@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -147,11 +148,9 @@ class _DetailContent extends StatelessWidget {
     ref.invalidate(productsStreamProvider);
     ref.invalidate(dashboardStatsProvider);
     HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(newStatus == 'sold' ? 'Marqué comme Vendu' : 'Marqué comme En ligne'),
-        duration: const Duration(seconds: 2),
-      ),
+    showAppToast(context, message:
+      newStatus == 'sold' ? 'Marqué comme Vendu' : 'Marqué comme En ligne',
+      type: ToastType.success,
     );
   }
 
@@ -247,13 +246,25 @@ class _DetailContent extends StatelessWidget {
         // ── Action Buttons ──────────────────────────────────────────────
         _ActionButtons(
           product: product,
-          onEdit: () => context.push('/items/edit/${product.id}'),
-          onDelete: () => _deleteProduct(context),
+          onEdit: () {
+            HapticFeedback.lightImpact();
+            context.push('/items/edit/${product.id}');
+          },
+          onDelete: () {
+            HapticFeedback.heavyImpact();
+            _deleteProduct(context);
+          },
           onMarkSold: product.status == 'listed'
-              ? () => _markAs(product, 'sold', context)
+              ? () {
+                  HapticFeedback.mediumImpact();
+                  _markAs(product, 'sold', context);
+                }
               : null,
           onMarkListed: product.status == 'bought'
-              ? () => _markAs(product, 'listed', context)
+              ? () {
+                  HapticFeedback.mediumImpact();
+                  _markAs(product, 'listed', context);
+                }
               : null,
           theme: theme,
           colorScheme: colorScheme,

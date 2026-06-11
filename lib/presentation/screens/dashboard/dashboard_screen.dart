@@ -19,6 +19,7 @@ class DashboardScreen extends ConsumerWidget {
 
     final productsAsync = ref.watch(productsStreamProvider);
     final statsAsync = ref.watch(dashboardStatsProvider);
+    final monthlyGoal = ref.watch(monthlyGoalProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -51,6 +52,7 @@ class DashboardScreen extends ConsumerWidget {
                 : _DashboardContent(
                     products: products,
                     stats: stats,
+                    monthlyGoal: monthlyGoal,
                     theme: theme,
                     colorScheme: colorScheme,
                   ),
@@ -84,12 +86,14 @@ class DashboardScreen extends ConsumerWidget {
 class _DashboardContent extends StatelessWidget {
   final List<Product> products;
   final Map<String, dynamic> stats;
+  final double monthlyGoal;
   final ThemeData theme;
   final ColorScheme colorScheme;
 
   const _DashboardContent({
     required this.products,
     required this.stats,
+    required this.monthlyGoal,
     required this.theme,
     required this.colorScheme,
   });
@@ -106,6 +110,17 @@ class _DashboardContent extends StatelessWidget {
 
     // Last 5 recent items
     final recentItems = products.take(5).toList();
+
+    // Profit goal progress
+    final goalPercentage = monthlyGoal > 0
+        ? (totalProfit / monthlyGoal).clamp(0.0, 1.0)
+        : 0.0;
+    final goalBarColor = switch (goalPercentage) {
+      >= 1.0 => const Color(0xFF2E7D32),
+      >= 0.75 => const Color(0xFF558B2F),
+      >= 0.5 => const Color(0xFFF9A825),
+      _ => colorScheme.primary,
+    };
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
@@ -135,6 +150,85 @@ class _DashboardContent extends StatelessWidget {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 16),
+
+        // Monthly profit goal section
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.cardTheme.color,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.flag_outlined, size: 18, color: colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Objectif du mois',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => context.push('/settings'),
+                    child: Icon(
+                      Icons.settings_outlined,
+                      size: 18,
+                      color: colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Animated progress bar
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: goalPercentage),
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          height: 12,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            widthFactor: value,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: goalBarColor,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '\u20ac${totalProfit.toStringAsFixed(2)} / \u20ac${monthlyGoal.toStringAsFixed(0)} (${(goalPercentage * 100).toStringAsFixed(0)}%)',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 16),
 
@@ -199,16 +293,35 @@ class _DashboardContent extends StatelessWidget {
             ),
           )
         else
-          ...recentItems.map(
-            (product) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _RecentItemCard(
-                product: product,
-                theme: theme,
-                colorScheme: colorScheme,
-                onTap: () => context.push('/items/${product.id}'),
-              ),
-            ),
+          ...recentItems.asMap().entries.map(
+            (entry) {
+              final i = entry.key;
+              final product = entry.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: Duration(milliseconds: 300 + i * 60),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) => Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 20 * (1 - value)),
+                      child: child,
+                    ),
+                  ),
+                  child: _RecentItemCard(
+                    product: product,
+                    theme: theme,
+                    colorScheme: colorScheme,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      context.push('/items/${product.id}');
+                    },
+                  ),
+                ),
+              );
+            },
           ),
       ],
     );

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../data/database/app_database.dart';
 import '../../data/database/dao/category_dao.dart';
@@ -74,3 +75,19 @@ final productByIdProvider =
   final dao = ref.watch(productDaoProvider);
   return dao.getById(id);
 });
+
+// ---------------------------------------------------------------------------
+// UI State providers
+// ---------------------------------------------------------------------------
+
+/// Monthly profit goal (default €300).
+final monthlyGoalProvider = StateProvider<double>((ref) => 300.0);
+
+/// Search query for items.
+final searchQueryProvider = StateProvider<String>((ref) => '');
+
+/// Sort option for items.
+enum SortOption { dateDesc, dateAsc, profitDesc, profitAsc, priceDesc, priceAsc, nameAsc }
+
+/// Current sort option.
+final sortOptionProvider = StateProvider<SortOption>((ref) => SortOption.dateDesc);

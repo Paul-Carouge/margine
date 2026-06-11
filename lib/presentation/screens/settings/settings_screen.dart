@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
@@ -9,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/services/update_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../providers/app_providers.dart';
+import '../../widgets/app_toast.dart';
 
 /// Settings screen — Coinbase‑style redesign with apparence, données,
 /// and à propos sections.
@@ -20,6 +22,7 @@ class SettingsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final themeMode = ref.watch(themeModeProvider);
+    final monthlyGoal = ref.watch(monthlyGoalProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -43,27 +46,33 @@ class SettingsScreen extends ConsumerWidget {
                   label: 'Clair',
                   icon: Icons.light_mode_outlined,
                   selected: themeMode == ThemeMode.light,
-                  onTap: () =>
-                      ref.read(themeModeProvider.notifier).state =
-                          ThemeMode.light,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(themeModeProvider.notifier).state =
+                        ThemeMode.light;
+                  },
                 ),
                 const Divider(height: 1, indent: 52),
                 _ThemeOption(
                   label: 'Sombre',
                   icon: Icons.dark_mode_outlined,
                   selected: themeMode == ThemeMode.dark,
-                  onTap: () =>
-                      ref.read(themeModeProvider.notifier).state =
-                          ThemeMode.dark,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(themeModeProvider.notifier).state =
+                        ThemeMode.dark;
+                  },
                 ),
                 const Divider(height: 1, indent: 52),
                 _ThemeOption(
                   label: 'Système',
                   icon: Icons.settings_suggest_outlined,
                   selected: themeMode == ThemeMode.system,
-                  onTap: () =>
-                      ref.read(themeModeProvider.notifier).state =
-                          ThemeMode.system,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(themeModeProvider.notifier).state =
+                        ThemeMode.system;
+                  },
                 ),
               ],
             ),
@@ -84,7 +93,18 @@ class SettingsScreen extends ConsumerWidget {
                 _DataActionTile(
                   icon: Icons.file_download_outlined,
                   label: 'Exporter en CSV',
-                  onTap: () => _exportAllData(context, ref),
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _exportAllData(context, ref);
+                  },
+                ),
+                const Divider(height: 1, indent: 52),
+                // Monthly goal row
+                _DataActionTile(
+                  icon: Icons.flag_outlined,
+                  label: 'Objectif de profit mensuel',
+                  trailing: '\u20ac${monthlyGoal.toStringAsFixed(0)}',
+                  onTap: () => _editMonthlyGoal(context, ref, monthlyGoal),
                 ),
                 const Divider(height: 1, indent: 52),
                 _DataActionTile(
@@ -168,6 +188,7 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   void _checkForUpdate(BuildContext context) {
+    HapticFeedback.lightImpact();
     // Read version from the context — or use a hardcoded constant
     const currentVersion = '1.4.0';
     UpdateService.checkForUpdate(currentVersion).then((update) {
@@ -179,11 +200,46 @@ class SettingsScreen extends ConsumerWidget {
           update['url']!,
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vous êtes à jour')),
-        );
+        showAppToast(context, message: 'Vous êtes à jour', type: ToastType.info);
       }
     });
+  }
+
+  void _editMonthlyGoal(BuildContext context, WidgetRef ref, double currentGoal) {
+    final controller = TextEditingController(text: currentGoal.toStringAsFixed(0));
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Objectif mensuel'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Montant (€)',
+            prefixText: '€ ',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final value = double.tryParse(controller.text.replaceAll(',', '.'));
+              if (value != null && value > 0) {
+                ref.read(monthlyGoalProvider.notifier).state = value;
+                Navigator.of(ctx).pop();
+                showAppToast(context, message: 'Objectif mis à jour', type: ToastType.success);
+              }
+            },
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _exportAllData(BuildContext context, WidgetRef ref) async {
@@ -193,9 +249,7 @@ class SettingsScreen extends ConsumerWidget {
 
     if (products.isEmpty) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Aucune donnée à exporter.')),
-        );
+        showAppToast(context, message: 'Aucune donnée à exporter.', type: ToastType.info);
       }
       return;
     }
@@ -244,9 +298,7 @@ class SettingsScreen extends ConsumerWidget {
       );
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Échec de l\'export : $e')),
-        );
+        showAppToast(context, message: 'Échec de l\'export : $e', type: ToastType.error);
       }
     }
   }
@@ -379,6 +431,7 @@ class _DataActionTile extends StatelessWidget {
     required this.icon,
     required this.label,
     this.subtitle,
+    this.trailing,
     this.enabled = true,
     this.onTap,
   });
@@ -386,6 +439,7 @@ class _DataActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String? subtitle;
+  final String? trailing;
   final bool enabled;
   final VoidCallback? onTap;
 
@@ -456,12 +510,31 @@ class _DataActionTile extends StatelessWidget {
                 ],
               ),
             ),
-            if (enabled)
-              Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
+            if (enabled || trailing != null)
+              trailing != null
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        trailing!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    )
+                  : Icon(
+                      Icons.chevron_right,
+                      size: 20,
+                      color: colorScheme.onSurface.withValues(alpha: 0.3),
+                    ),
           ],
         ),
       ),
@@ -545,11 +618,7 @@ class _AboutGitHubRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('https://github.com/paulcarouge/margine'),
-          ),
-        );
+        showAppToast(context, message: 'https://github.com/paulcarouge/margine', type: ToastType.info);
       },
       borderRadius: BorderRadius.circular(12),
       child: Padding(

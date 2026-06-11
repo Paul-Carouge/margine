@@ -8,6 +8,7 @@ import '../../presentation/screens/items/items_screen.dart';
 import '../../presentation/screens/items/add_edit_item_screen.dart';
 import '../../presentation/screens/detail/item_detail_screen.dart';
 import '../../presentation/screens/settings/settings_screen.dart';
+import '../../presentation/widgets/page_transition.dart';
 
 // ---------------------------------------------------------------------------
 // Shell scaffold for bottom navigation
@@ -58,7 +59,7 @@ class _MainShell extends StatelessWidget {
 // Router
 // ---------------------------------------------------------------------------
 
-/// The application's [GoRouter] instance.
+/// The application's [GoRouter] instance with Apple-style page transitions.
 final goRouter = GoRouter(
   initialLocation: '/',
   routes: [
@@ -71,7 +72,8 @@ final goRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/',
-              builder: (context, state) => const DashboardScreen(),
+              pageBuilder: (context, state) =>
+                  slideUpPage(const DashboardScreen(), key: state.pageKey),
             ),
           ],
         ),
@@ -81,22 +83,30 @@ final goRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/items',
-              builder: (context, state) => const ItemsScreen(),
+              pageBuilder: (context, state) =>
+                  slideUpPage(const ItemsScreen(), key: state.pageKey),
               routes: [
                 GoRoute(
                   path: 'add',
-                  builder: (context, state) => const AddEditItemScreen(),
+                  pageBuilder: (context, state) =>
+                      slideUpPage(const AddEditItemScreen(), key: state.pageKey),
                 ),
                 GoRoute(
                   path: 'edit/:id',
-                  builder: (context, state) => AddEditItemScreen(
-                    id: int.parse(state.pathParameters['id']!),
+                  pageBuilder: (context, state) => slideUpPage(
+                    AddEditItemScreen(
+                      id: int.parse(state.pathParameters['id']!),
+                    ),
+                    key: state.pageKey,
                   ),
                 ),
                 GoRoute(
                   path: ':id',
-                  builder: (context, state) => ItemDetailScreen(
-                    id: int.parse(state.pathParameters['id']!),
+                  pageBuilder: (context, state) => slideUpPage(
+                    ItemDetailScreen(
+                      id: int.parse(state.pathParameters['id']!),
+                    ),
+                    key: state.pageKey,
                   ),
                 ),
               ],
@@ -109,7 +119,8 @@ final goRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/analytics',
-              builder: (context, state) => const AnalyticsScreen(),
+              pageBuilder: (context, state) =>
+                  slideUpPage(const AnalyticsScreen(), key: state.pageKey),
             ),
           ],
         ),
@@ -119,7 +130,8 @@ final goRouter = GoRouter(
     // ── Settings (outside shell — accessed from AppBar) ──────────────────
     GoRoute(
       path: '/settings',
-      builder: (context, state) => const SettingsScreen(),
+      pageBuilder: (context, state) =>
+          slideUpPage(const SettingsScreen(), key: state.pageKey),
     ),
   ],
 );

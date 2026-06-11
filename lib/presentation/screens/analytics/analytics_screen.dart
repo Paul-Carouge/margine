@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../data/database/app_database.dart';
 import '../../providers/app_providers.dart';
+import '../../widgets/app_toast.dart';
 
 /// Analytics screen with monthly profit chart, category breakdown,
 /// stats cards, and CSV export.
@@ -30,7 +32,10 @@ class AnalyticsScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.file_download_outlined),
             tooltip: 'Exporter CSV',
-            onPressed: () => _exportCsv(context, ref),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _exportCsv(context, ref);
+            },
           ),
         ],
       ),
@@ -139,9 +144,7 @@ class AnalyticsScreen extends ConsumerWidget {
       );
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Échec de l’export : $e')),
-        );
+        showAppToast(context, message: 'Échec de l\u2019export : $e', type: ToastType.error);
       }
     }
   }
