@@ -95,6 +95,7 @@ class _DashboardContent extends StatelessWidget {
     final soldCount = (stats['soldCount'] as int?) ?? 0;
     final totalInvested = (stats['totalInvested'] as double?) ?? 0.0;
     final roi = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0.0;
+    final totalQuantity = products.fold<int>(0, (sum, p) => sum + (p.quantity > 0 ? p.quantity : 1));
 
     // Last 5 recent items
     final recentItems = products.take(5).toList();
@@ -146,7 +147,7 @@ class _DashboardContent extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _StatItem(label: 'Articles', value: '$count'),
+              _StatItem(label: 'Articles', value: '$totalQuantity'),
               _StatItem(label: 'Vendus', value: '$soldCount'),
               _StatItem(label: 'Actifs', value: '${count - soldCount}'),
             ],
@@ -366,13 +367,40 @@ class _RecentItemCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    product.name,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          product.name,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (product.quantity > 1) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'x${product.quantity}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Container(

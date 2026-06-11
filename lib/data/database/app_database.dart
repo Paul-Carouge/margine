@@ -32,6 +32,7 @@ class Products extends Table {
   TextColumn get description => text().nullable()();
   IntColumn get categoryId =>
       integer().references(Categories, #id, onDelete: KeyAction.setNull)();
+  IntColumn get quantity => integer().withDefault(const Constant(1))();
   RealColumn get purchasePrice => real()();
   DateTimeColumn get purchaseDate => dateTime()();
   TextColumn get source => text()();
@@ -90,6 +91,7 @@ class Product {
   final String name;
   final String? description;
   final int categoryId;
+  final int quantity;
   final double purchasePrice;
   final DateTime purchaseDate;
   final String source;
@@ -111,6 +113,7 @@ class Product {
     required this.name,
     this.description,
     required this.categoryId,
+    this.quantity = 1,
     required this.purchasePrice,
     required this.purchaseDate,
     required this.source,
@@ -153,12 +156,17 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            await m.addColumn(products, products.quantity);
+          }
         },
         beforeOpen: (details) async {
           if (details.wasCreated) {

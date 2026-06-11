@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -170,7 +172,9 @@ class _DetailContent extends StatelessWidget {
           theme: theme,
           children: [
             _InfoRow(
-              label: 'Prix d’achat',
+              label: product.quantity > 1
+                  ? 'Prix total (x${product.quantity})'
+                  : "Prix d'achat",
               value: '\u20ac${product.purchasePrice.toStringAsFixed(2)}',
             ),
             _InfoRow(
@@ -283,6 +287,15 @@ class _DetailContent extends StatelessWidget {
             StatusChip(status: product.status),
           ],
         ),
+        if (product.quantity > 1) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Quantité : ${product.quantity}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
         if (product.description != null && product.description!.isNotEmpty) ...[
           const SizedBox(height: 12),
           Text(
@@ -291,6 +304,29 @@ class _DetailContent extends StatelessWidget {
               color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
+        ],
+        // Photo
+        if (product.photoPath != null) ...[
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.file(
+                  File(product.photoPath!),
+                  width: double.infinity,
+                  height: 300,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const SizedBox.shrink(),
+                ),
+              ),
+            ),
+          ),
+        ] else ...[
+          const SizedBox.shrink(),
         ],
       ],
     );

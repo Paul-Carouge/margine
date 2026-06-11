@@ -296,6 +296,18 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       'REFERENCES categories (id) ON DELETE SET NULL',
     ),
   );
+  static const VerificationMeta _quantityMeta = const VerificationMeta(
+    'quantity',
+  );
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+    'quantity',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _purchasePriceMeta = const VerificationMeta(
     'purchasePrice',
   );
@@ -464,6 +476,7 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     name,
     description,
     categoryId,
+    quantity,
     purchasePrice,
     purchaseDate,
     source,
@@ -519,6 +532,12 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
       );
     } else if (isInserting) {
       context.missing(_categoryIdMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(
+        _quantityMeta,
+        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
+      );
     }
     if (data.containsKey('purchase_price')) {
       context.handle(
@@ -662,6 +681,10 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.int,
         data['${effectivePrefix}category_id'],
       )!,
+      quantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quantity'],
+      )!,
       purchasePrice: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}purchase_price'],
@@ -736,6 +759,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<String> name;
   final Value<String?> description;
   final Value<int> categoryId;
+  final Value<int> quantity;
   final Value<double> purchasePrice;
   final Value<DateTime> purchaseDate;
   final Value<String> source;
@@ -756,6 +780,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.name = const Value.absent(),
     this.description = const Value.absent(),
     this.categoryId = const Value.absent(),
+    this.quantity = const Value.absent(),
     this.purchasePrice = const Value.absent(),
     this.purchaseDate = const Value.absent(),
     this.source = const Value.absent(),
@@ -777,6 +802,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     required String name,
     this.description = const Value.absent(),
     required int categoryId,
+    this.quantity = const Value.absent(),
     required double purchasePrice,
     required DateTime purchaseDate,
     required String source,
@@ -805,6 +831,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<String>? name,
     Expression<String>? description,
     Expression<int>? categoryId,
+    Expression<int>? quantity,
     Expression<double>? purchasePrice,
     Expression<DateTime>? purchaseDate,
     Expression<String>? source,
@@ -826,6 +853,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (name != null) 'name': name,
       if (description != null) 'description': description,
       if (categoryId != null) 'category_id': categoryId,
+      if (quantity != null) 'quantity': quantity,
       if (purchasePrice != null) 'purchase_price': purchasePrice,
       if (purchaseDate != null) 'purchase_date': purchaseDate,
       if (source != null) 'source': source,
@@ -849,6 +877,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Value<String>? name,
     Value<String?>? description,
     Value<int>? categoryId,
+    Value<int>? quantity,
     Value<double>? purchasePrice,
     Value<DateTime>? purchaseDate,
     Value<String>? source,
@@ -870,6 +899,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       name: name ?? this.name,
       description: description ?? this.description,
       categoryId: categoryId ?? this.categoryId,
+      quantity: quantity ?? this.quantity,
       purchasePrice: purchasePrice ?? this.purchasePrice,
       purchaseDate: purchaseDate ?? this.purchaseDate,
       source: source ?? this.source,
@@ -902,6 +932,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     }
     if (categoryId.present) {
       map['category_id'] = Variable<int>(categoryId.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
     }
     if (purchasePrice.present) {
       map['purchase_price'] = Variable<double>(purchasePrice.value);
@@ -958,6 +991,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('name: $name, ')
           ..write('description: $description, ')
           ..write('categoryId: $categoryId, ')
+          ..write('quantity: $quantity, ')
           ..write('purchasePrice: $purchasePrice, ')
           ..write('purchaseDate: $purchaseDate, ')
           ..write('source: $source, ')
@@ -1312,6 +1346,7 @@ typedef $$ProductsTableCreateCompanionBuilder =
       required String name,
       Value<String?> description,
       required int categoryId,
+      Value<int> quantity,
       required double purchasePrice,
       required DateTime purchaseDate,
       required String source,
@@ -1334,6 +1369,7 @@ typedef $$ProductsTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String?> description,
       Value<int> categoryId,
+      Value<int> quantity,
       Value<double> purchasePrice,
       Value<DateTime> purchaseDate,
       Value<String> source,
@@ -1394,6 +1430,11 @@ class $$ProductsTableFilterComposer
 
   ColumnFilters<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+    column: $table.quantity,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1520,6 +1561,11 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get purchasePrice => $composableBuilder(
     column: $table.purchasePrice,
     builder: (column) => ColumnOrderings(column),
@@ -1639,6 +1685,9 @@ class $$ProductsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+
   GeneratedColumn<double> get purchasePrice => $composableBuilder(
     column: $table.purchasePrice,
     builder: (column) => column,
@@ -1752,6 +1801,7 @@ class $$ProductsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String?> description = const Value.absent(),
                 Value<int> categoryId = const Value.absent(),
+                Value<int> quantity = const Value.absent(),
                 Value<double> purchasePrice = const Value.absent(),
                 Value<DateTime> purchaseDate = const Value.absent(),
                 Value<String> source = const Value.absent(),
@@ -1772,6 +1822,7 @@ class $$ProductsTableTableManager
                 name: name,
                 description: description,
                 categoryId: categoryId,
+                quantity: quantity,
                 purchasePrice: purchasePrice,
                 purchaseDate: purchaseDate,
                 source: source,
@@ -1794,6 +1845,7 @@ class $$ProductsTableTableManager
                 required String name,
                 Value<String?> description = const Value.absent(),
                 required int categoryId,
+                Value<int> quantity = const Value.absent(),
                 required double purchasePrice,
                 required DateTime purchaseDate,
                 required String source,
@@ -1814,6 +1866,7 @@ class $$ProductsTableTableManager
                 name: name,
                 description: description,
                 categoryId: categoryId,
+                quantity: quantity,
                 purchasePrice: purchasePrice,
                 purchaseDate: purchaseDate,
                 source: source,

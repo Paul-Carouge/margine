@@ -1,8 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:drift/drift.dart' hide Column;
+import 'package:uuid/uuid.dart';
 
 import '../../providers/app_providers.dart';
 import '../../../data/database/app_database.dart';
@@ -38,6 +44,9 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
   String _status = 'bought';
   bool _isLoading = false;
   bool _isInitialized = false;
+
+  int _quantity = 1;
+  String? _photoPath;
 
   static const _sources = ['Vinted', 'AliExpress', 'Autre'];
 
@@ -141,6 +150,44 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
               ),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Le nom est requis' : null,
+            ),
+            const SizedBox(height: 16),
+
+            // ── Quantité ───────────────────────────────────────────────
+            _sectionLabel('Quantité', theme),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colorScheme.outline,
+                ),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove),
+                    onPressed: _quantity > 1
+                        ? () => setState(() => _quantity--)
+                        : null,
+                  ),
+                  const Spacer(),
+                  Text(
+                    '$_quantity',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: _quantity < 99
+                        ? () => setState(() => _quantity++)
+                        : null,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -409,6 +456,69 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
                 hintText: 'Any additional information...',
               ),
             ),
+            const SizedBox(height: 16),
+
+            // ── Photo ─────────────────────────────────────────────────────
+            _sectionLabel('Photo', theme),
+            const SizedBox(height: 6),
+            GestureDetector(
+              onTap: _showImagePickerOptions,
+              child: Container(
+                height: 140,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: colorScheme.outline,
+                    width: 1.5,
+                  ),
+                ),
+                child: _photoPath != null
+                    ? Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(11),
+                            child: Image.file(
+                              File(_photoPath!),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () => setState(() => _photoPath = null),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_a_photo_outlined, size: 32),
+                            SizedBox(height: 6),
+                            Text(
+                              'Ajouter une photo',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ),
             const SizedBox(height: 24),
 
             // ── Save Button ──────────────────────────────────────────────
@@ -477,6 +587,46 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
     }
   }
 
+  void _showImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Prendre une photo'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndSaveImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choisir dans la galerie'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndSaveImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndSaveImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, maxWidth: 1024);
+    if (picked == null) return;
+    final dir = await getApplicationDocumentsDirectory();
+    final fileName = '${const Uuid().v4()}.jpg';
+    final savedFile = await File(picked.path).copy(p.join(dir.path, fileName));
+    if (!mounted) return;
+    setState(() => _photoPath = savedFile.path);
+  }
+
   Future<void> _loadProduct() async {
     if (_isInitialized) return;
     _isInitialized = true;
@@ -493,6 +643,8 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
       _purchaseDate = product.purchaseDate;
       _source = product.source;
       _status = product.status;
+      _quantity = product.quantity;
+      _photoPath = product.photoPath;
       if (product.listingPrice != null) {
         _listingPriceController.text =
             product.listingPrice!.toStringAsFixed(2);
@@ -554,6 +706,10 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
             purchaseDate: Value(_purchaseDate),
             source: Value(_source),
             status: Value(_status),
+            quantity: Value(_quantity),
+            photoPath: _photoPath != null
+                ? Value(_photoPath)
+                : Value.absent(),
             listingPrice: listingPrice != null
                 ? Value(listingPrice)
                 : Value.absent(),
@@ -588,6 +744,10 @@ class _AddEditItemScreenState extends ConsumerState<AddEditItemScreen> {
             purchaseDate: Value(_purchaseDate),
             source: Value(_source),
             status: Value(_status),
+            quantity: Value(_quantity),
+            photoPath: _photoPath != null
+                ? Value(_photoPath)
+                : Value.absent(),
             listingPrice: Value(listingPrice),
             minPrice: Value(minPrice),
             salePrice: Value(salePrice),
