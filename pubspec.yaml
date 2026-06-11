@@ -1,5 +1,5 @@
-name: margine
-description: "Suivi d'achat et revente Vinted — Track your margins."
+name: letabli
+description: "L'Établi — Suivi d'achat et revente Vinted. L'atelier du flippeur."
 publish_to: 'none'
 version: 2.0.0+10
 
