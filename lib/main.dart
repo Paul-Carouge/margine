@@ -2,18 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/forge_colors.dart';
+import 'presentation/providers/app_providers.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Charger la couleur d'accent sauvegardée
+  final prefs = await SharedPreferences.getInstance();
+  final savedColorValue = prefs.getInt('accent_color');
+  final initialAccentColor = savedColorValue != null
+      ? Color(savedColorValue)
+      : ForgeColors.crimson;
+
   initializeDateFormatting('fr_FR', null);
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  runApp(const ProviderScope(child: EtabliApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        accentColorProvider.overrideWith((ref) => initialAccentColor),
+      ],
+      child: const EtabliApp(),
+    ),
+  );
 }
 
 /// Root widget for L'Établi v3.0.0 — Forge.
@@ -23,12 +41,20 @@ class EtabliApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    final accentColor = ref.watch(accentColorProvider);
+
+    // Sauvegarder automatiquement la couleur d'accent
+    ref.listen<Color>(accentColorProvider, (prev, next) {
+      SharedPreferences.getInstance().then(
+        (prefs) => prefs.setInt('accent_color', next.toARGB32()),
+      );
+    });
 
     return MaterialApp.router(
       title: "L'Établi",
       debugShowCheckedModeBanner: false,
-      theme: ForgeTheme.light,
-      darkTheme: ForgeTheme.dark,
+      theme: ForgeTheme.light(accentColor),
+      darkTheme: ForgeTheme.dark(accentColor),
       themeMode: themeMode,
       routerConfig: goRouter,
     );

@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -76,6 +77,13 @@ final monthlyGoalProvider = StateProvider<double>((ref) => 300.0);
 final filterStatusProvider = StateProvider<String>((ref) => 'all');
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final showSearchProvider = StateProvider<bool>((ref) => false);
+
+/// Couleur d'accent du thème (Crimson par défaut).
+/// La sauvegarde dans SharedPreferences est gérée automatiquement
+/// dans main.dart via ref.listen.
+final accentColorProvider = StateProvider<Color>(
+  (ref) => ForgeColors.crimson,
+);
 
 enum SortOption { dateDesc, profitDesc, priceDesc, nameAsc }
 

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:letabli/main.dart';
 import 'package:letabli/core/theme/app_theme.dart';
+import 'package:letabli/core/theme/forge_colors.dart';
 
 /// Minimal smoke test — verifies app renders without crashing
 void main() {
@@ -26,7 +27,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
-          theme: ForgeTheme.dark,
+          theme: ForgeTheme.dark(ForgeColors.crimson),
           home: const Scaffold(body: Center(child: Text('Home'))),
         ),
       ),

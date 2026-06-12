@@ -38,8 +38,11 @@ class ForgeTheme {
 
   // ── Light ThemeData ────────────────────────────────────────────────────────
 
-  static ThemeData get light {
-    final cs = ForgeColors.lightScheme();
+  static ThemeData light(Color primaryColor) {
+    final cs = ColorScheme.fromSeed(
+      seedColor: primaryColor,
+      brightness: Brightness.light,
+    );
     return _buildTheme(
       cs,
       ForgeColors.lightBg,
@@ -51,8 +54,11 @@ class ForgeTheme {
 
   // ── Dark ThemeData ─────────────────────────────────────────────────────────
 
-  static ThemeData get dark {
-    final cs = ForgeColors.darkScheme();
+  static ThemeData dark(Color primaryColor) {
+    final cs = ColorScheme.fromSeed(
+      seedColor: primaryColor,
+      brightness: Brightness.dark,
+    );
     return _buildTheme(
       cs,
       ForgeColors.bg,
@@ -173,7 +179,7 @@ class ForgeTheme {
         labelStyle:
             GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w600),
         backgroundColor: cardColor,
-        selectedColor: ForgeColors.crimsonContainer,
+        selectedColor: cs.primaryContainer,
         side: BorderSide.none,
       ),
 

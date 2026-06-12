@@ -106,6 +106,29 @@ class ForgeColors {
   static const Color lightTeal = Color(0xFF0D9488);
 
   // ────────────────────────────────────────────────────────────────────────────
+  // Accent color presets — sélecteur de couleur du thème
+  // ────────────────────────────────────────────────────────────────────────────
+
+  /// 6 couleurs d'accent au choix pour personnaliser le thème Forge.
+  static const List<Color> accentPresets = [
+    Color(0xFFC0392B), // Crimson — Forge (défaut)
+    Color(0xFF7C3AED), // Violet — Améthyste
+    Color(0xFF0D9488), // Teal — Jade
+    Color(0xFFD97706), // Amber — Ambre
+    Color(0xFFE11D48), // Rose — Cerise
+    Color(0xFF4F46E5), // Indigo — Saphir
+  ];
+
+  static const List<String> accentPresetNames = [
+    'Forge',
+    'Améthyste',
+    'Jade',
+    'Ambre',
+    'Cerise',
+    'Saphir',
+  ];
+
+  // ────────────────────────────────────────────────────────────────────────────
   // ColorScheme builders
   // ────────────────────────────────────────────────────────────────────────────
 

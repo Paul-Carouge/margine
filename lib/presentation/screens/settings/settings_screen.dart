@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/forge_colors.dart';
 import '../../providers/app_providers.dart';
 
 /// Settings screen — theme toggle, goal, data, about.
@@ -68,6 +69,17 @@ class SettingsScreen extends ConsumerWidget {
                       ref.read(themeModeProvider.notifier).state = v!,
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // ── Accent color ────────────────────────────────────────────────────
+          _SectionHeader(label: 'Couleur du thème'),
+          const SizedBox(height: 8),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _AccentColorGrid(),
             ),
           ),
           const SizedBox(height: 20),
@@ -243,6 +255,65 @@ class SettingsScreen extends ConsumerWidget {
         ),
       );
     }
+  }
+}
+
+/// Grille 3×2 de cercles de couleur pour choisir l'accent du thème.
+/// Style Coinbase : cercles 48×48px, bordure blanche sur le sélectionné.
+class _AccentColorGrid extends ConsumerWidget {
+  const _AccentColorGrid();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentColor = ref.watch(accentColorProvider);
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 1,
+      ),
+      itemCount: ForgeColors.accentPresets.length,
+      itemBuilder: (context, index) {
+        final color = ForgeColors.accentPresets[index];
+        final isSelected = color == currentColor;
+
+        return GestureDetector(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            ref.read(accentColorProvider.notifier).state = color;
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? Colors.white : Colors.transparent,
+                width: 3,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.4),
+                        blurRadius: 12,
+                        spreadRadius: 1,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: isSelected
+                ? const Icon(Icons.check, color: Colors.white, size: 22)
+                : null,
+          ),
+        );
+      },
+    );
   }
 }
 
