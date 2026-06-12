@@ -7,7 +7,7 @@ import '../../../../core/theme/forge_colors.dart';
 /// Forge v3.0 design:
 ///   - Pill shape: 20px radius
 ///   - Inactive: Surface background, Text Secondary
-///   - Active: Crimson Container background, Crimson text
+///   - Active: Primary Container background, Primary text
 ///   - 200ms AnimatedContainer
 class FilterPills extends StatelessWidget {
   final String current;
@@ -39,7 +39,7 @@ class FilterPills extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? ForgeColors.crimsonContainer
+                      ? Theme.of(context).colorScheme.primaryContainer
                       : ForgeColors.surface,
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -49,7 +49,7 @@ class FilterPills extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: isSelected
-                        ? ForgeColors.crimson
+                        ? Theme.of(context).colorScheme.primary
                         : ForgeColors.textSecondary,
                   ),
                 ),

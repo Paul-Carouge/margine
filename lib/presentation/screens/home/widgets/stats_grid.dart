@@ -6,7 +6,7 @@ import '../../../../core/theme/forge_colors.dart';
 ///
 /// Forge v3.0 design:
 ///   - Each card: Surface background, 20px radius, 16px padding
-///   - Icon: 20px, Crimson (or Teal for profit/revenue)
+///   - Icon: 20px, Primary (or Teal for profit/revenue)
 ///   - Value: Outfit titleLarge 18px Weight 700
 ///   - Label: Outfit bodySmall 12px
 ///   - Wrapped in two rows, 10px spacing
@@ -30,7 +30,7 @@ class StatsGrid extends StatelessWidget {
             Expanded(
               child: _StatCard(
                 icon: Icons.inventory_2_rounded,
-                iconColor: ForgeColors.crimson,
+                iconColor: Theme.of(context).colorScheme.primary,
                 value: '$stockCount',
                 label: 'En stock',
               ),
@@ -63,7 +63,7 @@ class StatsGrid extends StatelessWidget {
             Expanded(
               child: _StatCard(
                 icon: Icons.shopping_cart_rounded,
-                iconColor: ForgeColors.crimson,
+                iconColor: Theme.of(context).colorScheme.primary,
                 value: '${invested.toStringAsFixed(0)} €',
                 label: 'Dépensé',
               ),

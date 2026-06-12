@@ -14,7 +14,7 @@ import '../../../../presentation/providers/app_providers.dart';
 ///   - 220px height (was 200px)
 ///   - Overlay gradient: transparent → Bg (#15151C) at 70%
 ///   - Name in DM Serif Display 17px
-///   - Status badges: Crimson/Teal/Outline
+///   - Status badges: Primary/Teal/Outline
 ///   - Shadow: single, 16px blur, Bg at 40% opacity
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -212,8 +212,8 @@ class _StatusBadge extends StatelessWidget {
         ),
       'listed' => (
           'En ligne',
-          ForgeColors.crimsonContainer,
-          ForgeColors.crimson
+          Theme.of(context).colorScheme.primaryContainer,
+          Theme.of(context).colorScheme.primary
         ),
       'sold' => (
           'Vendu',

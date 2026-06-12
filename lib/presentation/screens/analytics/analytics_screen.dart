@@ -85,7 +85,7 @@ class AnalyticsScreen extends ConsumerWidget {
                       child: _StatCard(
                           label: 'En ligne',
                           value: '$listedCount',
-                          color: ForgeColors.crimson,
+                          color: cs.primary,
                           cs: cs)),
                   const SizedBox(width: 10),
                   Expanded(
@@ -137,7 +137,7 @@ class AnalyticsScreen extends ConsumerWidget {
                                 if (listedCount > 0)
                                   PieChartSectionData(
                                     value: listedCount.toDouble(),
-                                    color: ForgeColors.crimson,
+                                    color: cs.primary,
                                     radius: 50,
                                     showTitle: false,
                                   ),
@@ -184,7 +184,7 @@ class AnalyticsScreen extends ConsumerWidget {
                             label: 'Stock : $boughtCount'),
                         const SizedBox(height: 8),
                         _LegendDot(
-                            color: ForgeColors.crimson,
+                            color: cs.primary,
                             label: 'En ligne : $listedCount'),
                         const SizedBox(height: 8),
                         _LegendDot(

@@ -15,11 +15,10 @@ import '../../../providers/app_providers.dart';
 ///
 /// Forge v3.0 design:
 ///   - Sheet radius 24px
-///   - Drag handle: 36×4px, Outline Strong
 ///   - Photo: ClipRRect 16px, 220px height
 ///   - Name: DM Serif Display 20px
 ///   - Margin: DM Serif Display 32px, Teal or Error
-///   - Action buttons: Crimson primary, Outlined, TextButton Error
+///   - Action buttons: Primary, Outlined, TextButton Error
 class ProductDetailSheet extends ConsumerWidget {
   final Product product;
   const ProductDetailSheet({super.key, required this.product});
@@ -53,19 +52,6 @@ class ProductDetailSheet extends ConsumerWidget {
             controller: scrollController,
             padding: EdgeInsets.zero,
             children: [
-              // ── Drag handle ──────────────────────────────────────────
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 10, bottom: 16),
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: ForgeColors.outlineStrong,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-
               // ── Photo hero ───────────────────────────────────────────
               if (product.photoPath != null &&
                   product.photoPath!.isNotEmpty)
@@ -382,7 +368,7 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, color) = switch (status) {
       'bought' => ('Stock', ForgeColors.textSecondary),
-      'listed' => ('En ligne', ForgeColors.crimson),
+      'listed' => ('En ligne', Theme.of(context).colorScheme.primary),
       'sold' => ('Vendu', ForgeColors.teal),
       _ => ('Inconnu', Colors.grey),
     };

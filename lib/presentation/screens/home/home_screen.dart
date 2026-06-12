@@ -266,7 +266,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
 
-      // ── Full-width FAB — Crimson ─────────────────────────────────
+      // ── Full-width FAB — Primary ─────────────────────────────────
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
@@ -279,7 +279,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 context.push('/article/ajouter');
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: ForgeColors.crimson,
+                backgroundColor: cs.primary,
                 foregroundColor: ForgeColors.textPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
