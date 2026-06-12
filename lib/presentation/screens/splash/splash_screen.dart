@@ -1,19 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/services/update_service.dart';
+import '../../providers/app_providers.dart';
+
 /// Animated splash screen shown on app launch.
-class SplashScreen extends StatefulWidget {
+///
+/// After the animation, checks for updates via GitHub API.
+/// If an update is available and hasn't been dismissed by the user,
+/// shows a dialog before navigating to the home screen.
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _fade;
   late final Animation<double> _scale;
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -31,12 +40,12 @@ class _SplashScreenState extends State<SplashScreen>
       curve: const Interval(0.1, 0.8, curve: Curves.elasticOut),
     );
 
-    // Start animation, then navigate home
+    // Start animation, then check for updates before navigating
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) _ctrl.forward();
     });
     Future.delayed(const Duration(milliseconds: 2000), () {
-      if (mounted) context.go('/home');
+      if (mounted) _checkUpdateAndNavigate();
     });
   }
 
@@ -44,6 +53,46 @@ class _SplashScreenState extends State<SplashScreen>
   void dispose() {
     _ctrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkUpdateAndNavigate() async {
+    if (_navigated) return;
+
+    try {
+      final result = await ref.read(updateServiceProvider).checkForUpdate();
+
+      if (!mounted) return;
+
+      // Vérifier si l'utilisateur a déjà ignoré cette version
+      final dismissed = ref.read(dismissedVersionProvider);
+
+      if (result.hasUpdate &&
+          result.latestVersion != null &&
+          result.latestVersion != dismissed) {
+        // Afficher le dialog de mise à jour
+        final shouldUpdate = await showUpdateDialog(
+          context,
+          version: result.latestVersion!,
+          releaseNotes: result.releaseNotes ?? '',
+          downloadUrl: result.downloadUrl ?? '',
+        );
+
+        if (!mounted) return;
+
+        if (shouldUpdate == false) {
+          // L'utilisateur a cliqué "Plus tard", sauvegarder la version ignorée
+          ref.read(dismissedVersionProvider.notifier).state =
+              result.latestVersion;
+        }
+      }
+    } catch (_) {
+      // Ignorer les erreurs réseau silencieusement au splash
+    }
+
+    if (mounted && !_navigated) {
+      _navigated = true;
+      context.go('/home');
+    }
   }
 
   @override

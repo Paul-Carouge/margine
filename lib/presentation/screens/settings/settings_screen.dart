@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -7,22 +6,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/services/update_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/forge_colors.dart';
 import '../../providers/app_providers.dart';
 
 /// Settings screen — theme toggle, goal, data, about.
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _isCheckingUpdate = false;
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final themeMode = ref.watch(themeModeProvider);
     final goal = ref.watch(monthlyGoalProvider);
+    final currentVersion = ref.watch(currentVersionProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -136,14 +143,29 @@ class SettingsScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _exportCsv(context, ref),
                 ),
-                Divider(indent: 56, height: 1, color: cs.outlineVariant),
-                ListTile(
-                  leading: Icon(Icons.info_outline, color: cs.primary),
-                  title: const Text('Vérifier les mises à jour'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _checkUpdate(context),
-                ),
               ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // ── Mise à jour ─────────────────────────────────────────────────────
+          _SectionHeader(label: 'Mise à jour'),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: Icon(Icons.system_update_rounded, color: cs.primary),
+              title: const Text('Rechercher les mises à jour'),
+              trailing: _isCheckingUpdate
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: cs.primary,
+                      ),
+                    )
+                  : const Icon(Icons.chevron_right),
+              onTap: _isCheckingUpdate ? null : () => _checkUpdate(context),
             ),
           ),
           const SizedBox(height: 20),
@@ -157,16 +179,26 @@ class SettingsScreen extends ConsumerWidget {
                 ListTile(
                   leading: Icon(Icons.code, color: cs.primary),
                   title: const Text('Version'),
-                  trailing: Text('3.0.0',
-                      style: tt.bodyMedium
-                          ?.copyWith(color: cs.onSurfaceVariant)),
+                  trailing: currentVersion.when(
+                    data: (v) => Text(v,
+                        style: tt.bodyMedium
+                            ?.copyWith(color: cs.onSurfaceVariant)),
+                    loading: () => const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    error: (_, __) => Text('—',
+                        style: tt.bodyMedium
+                            ?.copyWith(color: cs.onSurfaceVariant)),
+                  ),
                 ),
-                Divider(indent: 56, height: 1, color: cs.outlineVariant),
-                ListTile(
-                  leading: const Icon(Icons.favorite_outline,
-                      color: Color(0xFFD94A3D)),
-                  title: const Text('Paul Carouge · Orion Team'),
-                  subtitle: const Text('Construit avec Flutter'),
+                const Divider(indent: 56, height: 1, color: Color(0x1AFFFFFF)),
+                const ListTile(
+                  leading:
+                      Icon(Icons.favorite_outline, color: Color(0xFFD94A3D)),
+                  title: Text('Paul Carouge · Orion Team'),
+                  subtitle: Text('Construit avec Flutter'),
                 ),
               ],
             ),
@@ -213,47 +245,61 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
+  /// Vérification manuelle des mises à jour.
+  ///
+  /// Affiche un loader, appelle l'API GitHub, puis :
+  /// - Si à jour : SnackBar "Vous êtes à jour (vX.Y.Z)"
+  /// - Si mise à jour dispo : affiche la popup (bypass la version ignorée)
+  /// - Si erreur : SnackBar "Impossible de vérifier les mises à jour"
   Future<void> _checkUpdate(BuildContext context) async {
-    final cs = Theme.of(context).colorScheme;
-    try {
-      final uri = Uri.parse(
-          'https://api.github.com/repos/Paul-Carouge/margine/releases/latest');
-      final client = HttpClient();
-      final request = await client.getUrl(uri);
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+    if (_isCheckingUpdate) return;
+    setState(() => _isCheckingUpdate = true);
 
-      if (body.contains('"tag_name"')) {
-        final tag = body.split('"tag_name":"')[1].split('"')[0];
-        const current = '3.0.0';
-        if (tag.compareTo(current) > 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Mise à jour disponible : $tag'),
-              action: SnackBarAction(
-                label: 'Télécharger',
-                onPressed: () => launchUrl(Uri.parse(
-                    'https://github.com/Paul-Carouge/margine/releases/latest')),
-              ),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text("L'Établi est à jour"),
-              backgroundColor: const Color(0xFF14B8A6),
-            ),
-          );
-        }
+    // Capturer les références avant l'await
+    final messenger = ScaffoldMessenger.of(context);
+    final errorColor = Theme.of(context).colorScheme.error;
+
+    try {
+      final result = await ref.read(updateServiceProvider).checkForUpdate();
+
+      if (!mounted) return;
+
+      if (result.error != null) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text('Impossible de vérifier les mises à jour'),
+            backgroundColor: errorColor,
+          ),
+        );
+      } else if (result.hasUpdate && result.latestVersion != null) {
+        // Vérification manuelle : toujours afficher la popup (bypass ignorée)
+        await showUpdateDialog(
+          this.context,
+          version: result.latestVersion!,
+          releaseNotes: result.releaseNotes ?? '',
+          downloadUrl: result.downloadUrl ?? '',
+        );
+      } else {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Vous êtes à jour (v${result.currentVersion})'),
+            backgroundColor: const Color(0xFF14B8A6),
+          ),
+        );
       }
-      client.close();
     } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Impossible de vérifier'),
-          backgroundColor: cs.error,
-        ),
-      );
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text('Impossible de vérifier les mises à jour'),
+            backgroundColor: errorColor,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCheckingUpdate = false);
+      }
     }
   }
 }
