@@ -24,40 +24,7 @@ class StatsGrid extends StatelessWidget {
 
     return Column(
       children: [
-        // Row 1: Dépensé, Gagné, Marge
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                icon: Icons.shopping_cart_rounded,
-                iconColor: ForgeColors.crimson,
-                value: '${invested.toStringAsFixed(0)} €',
-                label: 'Dépensé',
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatCard(
-                icon: Icons.trending_up_rounded,
-                iconColor: ForgeColors.teal,
-                value: '${revenue.toStringAsFixed(0)} €',
-                label: 'Gagné',
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatCard(
-                icon: Icons.show_chart_rounded,
-                iconColor: profit >= 0 ? ForgeColors.teal : ForgeColors.error,
-                value:
-                    '${profit >= 0 ? '+' : ''}${profit.toStringAsFixed(0)} €',
-                label: 'Marge',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        // Row 2: Stock, En ligne
+        // Row 1: En stock, En ligne, Marge (3 colonnes égales)
         Row(
           children: [
             Expanded(
@@ -77,7 +44,39 @@ class StatsGrid extends StatelessWidget {
                 label: 'En ligne',
               ),
             ),
-            const Expanded(child: SizedBox.shrink()), // spacer for 3-column alignment
+            const SizedBox(width: 10),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.show_chart_rounded,
+                iconColor: profit >= 0 ? ForgeColors.teal : ForgeColors.error,
+                value:
+                    '${profit >= 0 ? '+' : ''}${profit.toStringAsFixed(0)} €',
+                label: 'Marge',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        // Row 2: Dépensé, Gagné (50% chacun)
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: Icons.shopping_cart_rounded,
+                iconColor: ForgeColors.crimson,
+                value: '${invested.toStringAsFixed(0)} €',
+                label: 'Dépensé',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.trending_up_rounded,
+                iconColor: ForgeColors.teal,
+                value: '${revenue.toStringAsFixed(0)} €',
+                label: 'Gagné',
+              ),
+            ),
           ],
         ),
       ],

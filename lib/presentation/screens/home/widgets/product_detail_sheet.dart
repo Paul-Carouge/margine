@@ -207,17 +207,7 @@ class ProductDetailSheet extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: TextButton.icon(
-                        onPressed: () =>
-                            _deleteProduct(context, ref, product.id),
-                        icon: Icon(Icons.delete_outline,
-                            size: 18, color: cs.error),
-                        label: Text('Supprimer',
-                            style: TextStyle(color: cs.error)),
-                      ),
-                    ),
+                    _DeleteButton(productId: product.id),
                   ],
                 ),
               ),
@@ -244,29 +234,97 @@ class ProductDetailSheet extends ConsumerWidget {
       ),
     );
   }
+}
 
-  void _deleteProduct(BuildContext context, WidgetRef ref, int id) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer'),
-        content: const Text('Cette action est irréversible.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annuler')),
-          TextButton(
-            onPressed: () {
-              ref.read(productDaoProvider).deleteProduct(id);
-              Navigator.pop(ctx);
-              Navigator.pop(context);
-            },
-            child: Text('Supprimer',
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.error)),
+// ── Inline delete confirmation — no AlertDialog ────────────────────────────
+
+class _DeleteButton extends StatefulWidget {
+  final int productId;
+  const _DeleteButton({required this.productId});
+
+  @override
+  State<_DeleteButton> createState() => _DeleteButtonState();
+}
+
+class _DeleteButtonState extends State<_DeleteButton> {
+  bool _confirming = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    if (!_confirming) {
+      return SizedBox(
+        width: double.infinity,
+        child: TextButton.icon(
+          onPressed: () => setState(() => _confirming = true),
+          icon: Icon(Icons.delete_outline, size: 18, color: cs.error),
+          label: Text('Supprimer',
+              style: TextStyle(color: cs.error)),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: cs.error.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: cs.error.withValues(alpha: 0.2)),
           ),
-        ],
-      ),
+          child: Column(
+            children: [
+              Text(
+                'Confirmer la suppression ?',
+                style: TextStyle(
+                  color: cs.error,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Cette action est irréversible.',
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => setState(() => _confirming = false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      child: const Text('Annuler'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ProviderScope.containerOf(context).read(productDaoProvider).deleteProduct(widget.productId);
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: cs.error,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      child: const Text('Supprimer'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
