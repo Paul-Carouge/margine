@@ -39,9 +39,20 @@ class ForgeTheme {
   // ── Light ThemeData ────────────────────────────────────────────────────────
 
   static ThemeData light(Color primaryColor) {
-    final cs = ColorScheme.fromSeed(
-      seedColor: primaryColor,
-      brightness: Brightness.light,
+    final cs = ColorScheme.light(
+      primary: primaryColor,
+      onPrimary: Colors.white,
+      primaryContainer: primaryColor.withValues(alpha: 0.12),
+      secondary: ForgeColors.textSecondary,
+      onSecondary: Colors.white,
+      surface: ForgeColors.lightBg,
+      onSurface: ForgeColors.lightTextPrimary,
+      surfaceContainerHighest: ForgeColors.lightSurface,
+      onSurfaceVariant: ForgeColors.lightTextSecondary,
+      error: ForgeColors.error,
+      onError: Colors.white,
+      outline: ForgeColors.lightOutline,
+      surfaceTint: Colors.transparent,
     );
     return _buildTheme(
       cs,
@@ -55,9 +66,20 @@ class ForgeTheme {
   // ── Dark ThemeData ─────────────────────────────────────────────────────────
 
   static ThemeData dark(Color primaryColor) {
-    final cs = ColorScheme.fromSeed(
-      seedColor: primaryColor,
-      brightness: Brightness.dark,
+    final cs = ColorScheme.dark(
+      primary: primaryColor,
+      onPrimary: Colors.white,
+      primaryContainer: primaryColor.withValues(alpha: 0.15),
+      secondary: ForgeColors.teal,
+      onSecondary: ForgeColors.bg,
+      surface: ForgeColors.bg,
+      onSurface: ForgeColors.textPrimary,
+      surfaceContainerHighest: ForgeColors.surface,
+      onSurfaceVariant: ForgeColors.textSecondary,
+      error: ForgeColors.error,
+      onError: ForgeColors.bg,
+      outline: ForgeColors.outline,
+      surfaceTint: Colors.transparent,
     );
     return _buildTheme(
       cs,
