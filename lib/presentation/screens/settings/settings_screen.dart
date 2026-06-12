@@ -46,7 +46,8 @@ class SettingsScreen extends ConsumerWidget {
                   title: const Text('Système'),
                   subtitle: const Text('Suit les réglages de ton téléphone'),
                   activeColor: cs.primary,
-                  onChanged: (v) => ref.read(themeModeProvider.notifier).state = v!,
+                  onChanged: (v) =>
+                      ref.read(themeModeProvider.notifier).state = v!,
                 ),
                 RadioListTile<ThemeMode>(
                   value: ThemeMode.dark,
@@ -54,7 +55,8 @@ class SettingsScreen extends ConsumerWidget {
                   title: const Text('Sombre'),
                   subtitle: const Text('Mode nuit permanent'),
                   activeColor: cs.primary,
-                  onChanged: (v) => ref.read(themeModeProvider.notifier).state = v!,
+                  onChanged: (v) =>
+                      ref.read(themeModeProvider.notifier).state = v!,
                 ),
                 RadioListTile<ThemeMode>(
                   value: ThemeMode.light,
@@ -62,7 +64,8 @@ class SettingsScreen extends ConsumerWidget {
                   title: const Text('Clair'),
                   subtitle: const Text('Mode jour permanent'),
                   activeColor: cs.primary,
-                  onChanged: (v) => ref.read(themeModeProvider.notifier).state = v!,
+                  onChanged: (v) =>
+                      ref.read(themeModeProvider.notifier).state = v!,
                 ),
               ],
             ),
@@ -92,7 +95,8 @@ class SettingsScreen extends ConsumerWidget {
                     divisions: 40,
                     activeColor: cs.primary,
                     label: '${goal.round()} €',
-                    onChanged: (v) => ref.read(monthlyGoalProvider.notifier).state = v,
+                    onChanged: (v) =>
+                        ref.read(monthlyGoalProvider.notifier).state = v,
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -114,7 +118,8 @@ class SettingsScreen extends ConsumerWidget {
             child: Column(
               children: [
                 ListTile(
-                  leading: Icon(Icons.file_download_outlined, color: cs.primary),
+                  leading:
+                      Icon(Icons.file_download_outlined, color: cs.primary),
                   title: const Text('Exporter en CSV'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _exportCsv(context, ref),
@@ -140,11 +145,14 @@ class SettingsScreen extends ConsumerWidget {
                 ListTile(
                   leading: Icon(Icons.code, color: cs.primary),
                   title: const Text('Version'),
-                  trailing: Text('2.0.0', style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  trailing: Text('3.0.0',
+                      style: tt.bodyMedium
+                          ?.copyWith(color: cs.onSurfaceVariant)),
                 ),
                 Divider(indent: 56, height: 1, color: cs.outlineVariant),
                 ListTile(
-                  leading: const Icon(Icons.favorite_outline, color: Color(0xFFD94A3D)),
+                  leading: const Icon(Icons.favorite_outline,
+                      color: Color(0xFFD94A3D)),
                   title: const Text('Paul Carouge · Orion Team'),
                   subtitle: const Text('Construit avec Flutter'),
                 ),
@@ -158,27 +166,46 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _exportCsv(BuildContext context, WidgetRef ref) async {
-    final dao = ref.read(productDaoProvider);
-    final products = await dao.getAll();
-    final buffer = StringBuffer();
-    buffer.writeln('Nom;Statut;Prix achat;Prix vente;Frais Vinted;Frais envoi;Frais emballage;Marge;Date achat;Date vente');
-    for (final p in products) {
-      final profit = p.status == 'sold' && p.salePrice != null
-          ? (p.salePrice! - p.purchasePrice - p.vintedFees - p.shippingCost - p.packagingCost).toStringAsFixed(2)
-          : '-';
-      buffer.writeln('${p.name};${p.status};${p.purchasePrice};${p.salePrice ?? '-'};${p.vintedFees};${p.shippingCost};${p.packagingCost};$profit;${p.purchaseDate.toIso8601String()};${p.saleDate?.toIso8601String() ?? '-'}');
+    try {
+      final dao = ref.read(productDaoProvider);
+      final products = await dao.getAll();
+      final buffer = StringBuffer();
+      buffer.writeln(
+          'Nom;Statut;Prix achat;Prix vente;Frais Vinted;Frais envoi;Frais emballage;Marge;Date achat;Date vente');
+      for (final p in products) {
+        final profit = p.status == 'sold' && p.salePrice != null
+            ? (p.salePrice! -
+                    p.purchasePrice -
+                    p.vintedFees -
+                    p.shippingCost -
+                    p.packagingCost)
+                .toStringAsFixed(2)
+            : '-';
+        buffer.writeln(
+            '${p.name};${p.status};${p.purchasePrice};${p.salePrice ?? '-'};${p.vintedFees};${p.shippingCost};${p.packagingCost};$profit;${p.purchaseDate.toIso8601String()};${p.saleDate?.toIso8601String() ?? '-'}');
+      }
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/letabli-export.csv');
+      await file.writeAsString(buffer.toString());
+      await Share.shareXFiles([XFile(file.path)], text: "Export L'Établi");
+      HapticFeedback.mediumImpact();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erreur lors de l'export : $e"),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/margine-export.csv');
-    await file.writeAsString(buffer.toString());
-    await Share.shareXFiles([XFile(file.path)], text: 'Export Margine');
-    HapticFeedback.mediumImpact();
   }
 
   Future<void> _checkUpdate(BuildContext context) async {
     final cs = Theme.of(context).colorScheme;
     try {
-      final uri = Uri.parse('https://api.github.com/repos/Paul-Carouge/margine/releases/latest');
+      final uri = Uri.parse(
+          'https://api.github.com/repos/Paul-Carouge/margine/releases/latest');
       final client = HttpClient();
       final request = await client.getUrl(uri);
       final response = await request.close();
@@ -186,22 +213,23 @@ class SettingsScreen extends ConsumerWidget {
 
       if (body.contains('"tag_name"')) {
         final tag = body.split('"tag_name":"')[1].split('"')[0];
-        final current = '2.0.0';
+        const current = '3.0.0';
         if (tag.compareTo(current) > 0) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Mise à jour disponible : $tag'),
               action: SnackBarAction(
                 label: 'Télécharger',
-                onPressed: () => launchUrl(Uri.parse('https://github.com/Paul-Carouge/margine/releases/latest')),
+                onPressed: () => launchUrl(Uri.parse(
+                    'https://github.com/Paul-Carouge/margine/releases/latest')),
               ),
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Margine est à jour'),
-              backgroundColor: const Color(0xFF3A8A6C),
+              content: const Text("L'Établi est à jour"),
+              backgroundColor: const Color(0xFF14B8A6),
             ),
           );
         }
@@ -227,9 +255,18 @@ class _SectionHeader extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Container(width: 3, height: 14, decoration: BoxDecoration(color: cs.primary, borderRadius: BorderRadius.circular(2))),
+        Container(
+            width: 3,
+            height: 14,
+            decoration: BoxDecoration(
+                color: cs.primary,
+                borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 8),
-        Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13)),
+        Text(label,
+            style: TextStyle(
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+                fontSize: 13)),
       ],
     );
   }

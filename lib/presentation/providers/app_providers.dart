@@ -1,6 +1,9 @@
+import 'dart:ui';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
+import '../../core/theme/forge_colors.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/dao/category_dao.dart';
 import '../../data/database/dao/product_dao.dart';
@@ -76,7 +79,8 @@ final showSearchProvider = StateProvider<bool>((ref) => false);
 
 enum SortOption { dateDesc, profitDesc, priceDesc, nameAsc }
 
-final sortOptionProvider = StateProvider<SortOption>((ref) => SortOption.dateDesc);
+final sortOptionProvider =
+    StateProvider<SortOption>((ref) => SortOption.dateDesc);
 
 /// Returns the display name for a status key.
 String statusLabel(String status) {
@@ -93,23 +97,32 @@ String statusLabel(String status) {
 }
 
 /// Returns the semantic color for a status key.
-int statusColorValue(String status) {
+Color statusColor(String status) {
   switch (status) {
     case 'bought':
-      return 0xFF3A8A6C;
+      return ForgeColors.textSecondary;
     case 'listed':
-      return 0xFF5B7FBF;
+      return ForgeColors.crimson;
     case 'sold':
-      return 0xFFD4A74D;
+      return ForgeColors.teal;
     default:
-      return 0xFF8A8A98;
+      return ForgeColors.textSecondary;
   }
+}
+
+/// Returns the int color value for a status key (used in DB).
+int statusColorValue(String status) {
+  return statusColor(status).toARGB32();
 }
 
 /// Profit margin helpers.
 double profitFor(Product p) {
   if (p.status != 'sold' || p.salePrice == null) return 0;
-  return p.salePrice! - p.purchasePrice - p.vintedFees - p.shippingCost - p.packagingCost;
+  return p.salePrice! -
+      p.purchasePrice -
+      p.vintedFees -
+      p.shippingCost -
+      p.packagingCost;
 }
 
 double marginPercent(Product p) {

@@ -3,14 +3,19 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/forge_colors.dart';
+import '../../../../core/utils/format_date.dart';
 import '../../../../data/database/app_database.dart';
 import '../../../../presentation/providers/app_providers.dart';
 
-/// A full-width product card with photo background and overlay.
+/// A full-width product card with photo background and Graphite overlay.
 ///
-/// The photo takes centre stage with a dark gradient overlay for readability.
-/// Shows name, status chip, and profit amount.
+/// Forge v3.0 design:
+///   - 220px height (was 200px)
+///   - Overlay gradient: transparent → Bg (#15151C) at 70%
+///   - Name in DM Serif Display 17px
+///   - Status badges: Crimson/Teal/Outline
+///   - Shadow: single, 16px blur, Bg at 40% opacity
 class ProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback onTap;
@@ -24,7 +29,6 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final profit = profitFor(product);
     final isProfitable = profit >= 0;
 
@@ -34,15 +38,15 @@ class ProductCard extends StatelessWidget {
         onTap();
       },
       child: Container(
-        height: 200,
+        height: 220,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           color: cs.surfaceContainerHighest,
           boxShadow: [
             BoxShadow(
-              color: cs.primary.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: ForgeColors.bg.withValues(alpha: 0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -50,35 +54,33 @@ class ProductCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // ── Photo or placeholder ──────────────────────────────────────────
+            // ── Photo or placeholder ──────────────────────────────────────
             if (product.photoPath != null && product.photoPath!.isNotEmpty)
               Image.file(
                 File(product.photoPath!),
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _GradientBg(cs),
+                errorBuilder: (_, __, ___) => _GradientBg(),
               )
             else
-              _GradientBg(cs),
+              const _GradientBg(),
 
-            // ── Dark scrim gradient ──────────────────────────────────────────
+            // ── Graphite scrim gradient ───────────────────────────────────
             Positioned.fill(
               child: DecoratedBox(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      cs.brightness == Brightness.dark
-                          ? Colors.black.withValues(alpha: 0.6)
-                          : Colors.black.withValues(alpha: 0.5),
+                      Color(0xB315151C), // #15151C at 70% opacity
                     ],
                   ),
                 ),
               ),
             ),
 
-            // ── Content overlay ──────────────────────────────────────────────
+            // ── Content overlay ──────────────────────────────────────────
             Positioned(
               left: 16,
               right: 16,
@@ -93,14 +95,18 @@ class ProductCard extends StatelessWidget {
                       if (product.quantity > 1) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             'x${product.quantity}',
-                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600),
                           ),
                         ),
                       ],
@@ -111,7 +117,9 @@ class ProductCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: isProfitable ? MargineTheme.profitGreen : MargineTheme.lossRed,
+                            color: isProfitable
+                                ? ForgeColors.teal
+                                : ForgeColors.error,
                             letterSpacing: -0.5,
                           ),
                         ),
@@ -122,15 +130,16 @@ class ProductCard extends StatelessWidget {
                     product.name,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'DM Serif Display',
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Acheté ${product.purchasePrice.toStringAsFixed(0)} € · ${_fmtDate(product.purchaseDate)}',
+                    'Acheté ${product.purchasePrice.toStringAsFixed(0)} € · ${FormatDate.short(product.purchaseDate)}',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 12,
@@ -140,17 +149,16 @@ class ProductCard extends StatelessWidget {
               ),
             ),
 
-            // ── Top-right price if not sold ──────────────────────────────────
+            // ── Top-right price if not sold ──────────────────────────────
             if (product.status != 'sold')
               Positioned(
                 top: 12,
                 right: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: cs.brightness == Brightness.dark
-                        ? Colors.black.withValues(alpha: 0.5)
-                        : Colors.black.withValues(alpha: 0.35),
+                    color: ForgeColors.bg.withValues(alpha: 0.65),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -168,23 +176,19 @@ class ProductCard extends StatelessWidget {
       ),
     );
   }
-
-  String _fmtDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
 }
 
 class _GradientBg extends StatelessWidget {
-  final ColorScheme cs;
-  const _GradientBg(this.cs);
+  const _GradientBg();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            cs.surfaceContainerHighest,
-            cs.primary.withValues(alpha: 0.1),
+            ForgeColors.surface,
+            Color(0x1AC0392B), // crimson at 10% opacity
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -200,25 +204,37 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (status) {
-      'bought' => ('Stock', MargineTheme.statusBought),
-      'listed' => ('En ligne', MargineTheme.statusListed),
-      'sold' => ('Vendu', MargineTheme.statusSold),
-      _ => ('', Colors.grey),
+    final (label, bgColor, textColor) = switch (status) {
+      'bought' => (
+          'Stock',
+          ForgeColors.surface.withValues(alpha: 0.6),
+          const Color(0xFFF0EDE5)
+        ),
+      'listed' => (
+          'En ligne',
+          ForgeColors.crimsonContainer,
+          ForgeColors.crimson
+        ),
+      'sold' => (
+          'Vendu',
+          ForgeColors.tealContainer,
+          ForgeColors.teal
+        ),
+      _ => ('', Colors.grey, Colors.white),
     };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.85),
+        color: bgColor,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: textColor,
           fontSize: 11,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

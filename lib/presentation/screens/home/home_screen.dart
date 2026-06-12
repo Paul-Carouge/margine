@@ -1,24 +1,27 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:drift/drift.dart' hide Column;
 
-import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/forge_colors.dart';
 import '../../../data/database/app_database.dart';
 import '../../providers/app_providers.dart';
 import 'widgets/stats_grid.dart';
-import 'widgets/product_card.dart';
+import 'widgets/filter_pills.dart';
+import 'widgets/sort_button.dart';
+import 'widgets/action_icon.dart';
+import 'widgets/empty_state.dart';
+import 'widgets/product_detail_sheet.dart';
+import 'widgets/swipeable_card.dart';
 
-/// Home screen — "L'Atelier"
+/// Home screen — "L'Atelier" — Forge v3.0.
 ///
 /// A single scrollable gallery. No bottom nav, no tabs.
-///   • Stats cockpit at top (2×2 big numbers)
-///   • Filter pills
-///   • Vertical scroll of photo-hero product cards
-///   • FAB for quick add
+///   • Stats cockpit: individual cards with icons
+///   • Filter pills (20px radius)
+///   • Vertical scroll of 220px photo-hero product cards (16px gap)
+///   • Full-width FAB in Crimson
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -55,51 +58,71 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SafeArea(
             child: CustomScrollView(
               slivers: [
-                // ── Header row ────────────────────────────────────────────
+                // ── Header row ──────────────────────────────────────────
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Text(
-                          "L'Établi",
-                          style: textTheme.headlineLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              "L'Établi",
+                              style: textTheme.headlineLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const Spacer(),
+                            // Search toggle
+                            ActionIcon(
+                              icon: showSearch
+                                  ? Icons.close_rounded
+                                  : Icons.search_rounded,
+                              onTap: () {
+                                if (showSearch) {
+                                  _searchCtrl.clear();
+                                  ref
+                                      .read(searchQueryProvider.notifier)
+                                      .state = '';
+                                }
+                                ref
+                                    .read(showSearchProvider.notifier)
+                                    .state = !showSearch;
+                              },
+                            ),
+                            const SizedBox(width: 4),
+                            // Sort popup
+                            SortButton(
+                              current: sortOption,
+                              onSelected: (s) => ref
+                                  .read(sortOptionProvider.notifier)
+                                  .state = s,
+                            ),
+                            const SizedBox(width: 4),
+                            ActionIcon(
+                              icon: Icons.bar_chart_rounded,
+                              onTap: () => context.push('/analytics'),
+                            ),
+                            const SizedBox(width: 4),
+                            ActionIcon(
+                              icon: Icons.settings_rounded,
+                              onTap: () => context.push('/settings'),
+                            ),
+                          ],
                         ),
-                        const Spacer(),
-                        // ── Search toggle ──────────────────────────────────
-                        _IconBtn(
-                          icon: showSearch ? Icons.close_rounded : Icons.search_rounded,
-                          onTap: () {
-                            if (showSearch) {
-                              _searchCtrl.clear();
-                              ref.read(searchQueryProvider.notifier).state = '';
-                            }
-                            ref.read(showSearchProvider.notifier).state = !showSearch;
-                          },
-                        ),
-                        const SizedBox(width: 4),
-                        // ── Sort popup ────────────────────────────────────
-                        _SortBtn(
-                          current: sortOption,
-                          onSelected: (s) => ref.read(sortOptionProvider.notifier).state = s,
-                        ),
-                        const SizedBox(width: 4),
-                        _IconBtn(
-                          icon: Icons.bar_chart_rounded,
-                          onTap: () => context.push('/analytics'),
-                        ),
-                        const SizedBox(width: 4),
-                        _IconBtn(
-                          icon: Icons.settings_rounded,
-                          onTap: () => context.push('/settings'),
+                        const SizedBox(height: 8),
+                        // Subtle separator line — the edge of the workbench
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: ForgeColors.outlineSubtle,
                         ),
                       ],
                     ),
                   ),
                 ),
-                // ── Search bar (conditionnel) ─────────────────────────────
+
+                // ── Search bar (conditional) ───────────────────────────
                 if (showSearch)
                   SliverToBoxAdapter(
                     child: Padding(
@@ -107,16 +130,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: TextField(
                         autofocus: true,
                         controller: _searchCtrl,
-                        onChanged: (v) => ref.read(searchQueryProvider.notifier).state = v.toLowerCase(),
+                        onChanged: (v) =>
+                            ref.read(searchQueryProvider.notifier).state =
+                                v.toLowerCase(),
                         decoration: InputDecoration(
                           hintText: 'Rechercher un article…',
-                          prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                          prefixIcon: const Icon(Icons.search_rounded,
+                              size: 20),
                           suffixIcon: searchQuery.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.clear_rounded, size: 18),
+                                  icon: const Icon(Icons.clear_rounded,
+                                      size: 18),
                                   onPressed: () {
                                     _searchCtrl.clear();
-                                    ref.read(searchQueryProvider.notifier).state = '';
+                                    ref
+                                        .read(searchQueryProvider.notifier)
+                                        .state = '';
                                   },
                                 )
                               : null,
@@ -125,114 +154,119 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
 
-            // ── Stats cockpit ───────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                child: statsAsync.when(
-                  data: (s) => StatsGrid(stats: s),
-                  loading: () => const SizedBox(height: 100),
-                  error: (e, _) => SizedBox(
-                    height: 100,
-                    child: Center(
-                      child: Text(
-                        'Impossible de charger les stats',
-                        style: textTheme.bodyMedium?.copyWith(color: cs.error),
+                // ── Stats cockpit ───────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    child: statsAsync.when(
+                      data: (s) => StatsGrid(stats: s),
+                      loading: () => const SizedBox(height: 100),
+                      error: (e, _) => SizedBox(
+                        height: 100,
+                        child: Center(
+                          child: Text(
+                            'Impossible de charger les stats',
+                            style: textTheme.bodyMedium
+                                ?.copyWith(color: cs.error),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
 
-            // ── Filter pills ────────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: FilterPills(
-                  current: filter,
-                  onChanged: (f) => ref.read(filterStatusProvider.notifier).state = f,
+                // ── Filter pills ────────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    child: FilterPills(
+                      current: filter,
+                      onChanged: (f) =>
+                          ref.read(filterStatusProvider.notifier).state = f,
+                    ),
+                  ),
                 ),
-              ),
-            ),
 
-            // ── Product gallery ─────────────────────────────────────────────
-            productsAsync.when(
-              data: (products) {
-                // ── Apply search filter + sort ─────────────────────────
-                var filtered = products.where((p) {
-                  if (searchQuery.isEmpty) return true;
-                  return p.name.toLowerCase().contains(searchQuery);
-                }).toList();
+                // ── Product gallery ─────────────────────────────────────
+                productsAsync.when(
+                  data: (products) {
+                    // Apply search filter + sort
+                    var filtered = products.where((p) {
+                      if (searchQuery.isEmpty) return true;
+                      return p.name.toLowerCase().contains(searchQuery);
+                    }).toList();
 
-                switch (sortOption) {
-                  case SortOption.dateDesc:
-                    // already sorted by updatedAt desc
-                    break;
-                  case SortOption.profitDesc:
-                    filtered.sort((a, b) {
-                      final pa = profitFor(a);
-                      final pb = profitFor(b);
-                      return pb.compareTo(pa);
-                    });
-                    break;
-                  case SortOption.priceDesc:
-                    filtered.sort((a, b) => b.purchasePrice.compareTo(a.purchasePrice));
-                    break;
-                  case SortOption.nameAsc:
-                    filtered.sort((a, b) => a.name.compareTo(b.name));
-                    break;
-                }
+                    switch (sortOption) {
+                      case SortOption.dateDesc:
+                        break;
+                      case SortOption.profitDesc:
+                        filtered.sort((a, b) {
+                          final pa = profitFor(a);
+                          final pb = profitFor(b);
+                          return pb.compareTo(pa);
+                        });
+                        break;
+                      case SortOption.priceDesc:
+                        filtered.sort(
+                            (a, b) => b.purchasePrice.compareTo(a.purchasePrice));
+                        break;
+                      case SortOption.nameAsc:
+                        filtered.sort((a, b) => a.name.compareTo(b.name));
+                        break;
+                    }
 
-                if (filtered.isEmpty) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _EmptyState(filter: filter),
-                  );
-                }
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final product = filtered[index];
-                      return Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          20,
-                          index == 0 ? 0 : 0,
-                          20,
-                          index == filtered.length - 1 ? 100 : 12,
-                        ),
-                        child: _SwipeableCard(
-                          product: product,
-                          onTap: () => _showDetail(context, product),
-                          onMarkSold: () => _quickMarkSold(product.id),
-                        ),
+                    if (filtered.isEmpty) {
+                      return SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: EmptyState(filter: filter),
                       );
-                    },
-                    childCount: filtered.length,
+                    }
+                    return SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final product = filtered[index];
+                          return Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              20,
+                              index == 0 ? 0 : 0,
+                              20,
+                              index == filtered.length - 1 ? 100 : 16,
+                            ),
+                            child: SwipeableCard(
+                              product: product,
+                              onTap: () =>
+                                  _showDetail(context, product),
+                              onMarkSold: () =>
+                                  _quickMarkSold(product.id),
+                            ),
+                          );
+                        },
+                        childCount: filtered.length,
+                      ),
+                    );
+                  },
+                  loading: () => const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(child: CircularProgressIndicator()),
                   ),
-                );
-              },
-              loading: () => const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (e, _) => SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Text(
-                    'Erreur : $e',
-                    style: textTheme.bodyMedium?.copyWith(color: cs.error),
+                  error: (e, _) => SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Text(
+                        'Erreur : $e',
+                        style: textTheme.bodyMedium
+                            ?.copyWith(color: cs.error),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    ],
-  ),
 
-      // ── Full-width FAB ──────────────────────────────────────────
+      // ── Full-width FAB — Crimson ─────────────────────────────────
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
@@ -244,6 +278,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 HapticFeedback.mediumImpact();
                 context.push('/article/ajouter');
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ForgeColors.crimson,
+                foregroundColor: ForgeColors.textPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
               icon: const Icon(Icons.add_rounded, size: 22),
               label: const Text(
                 'Nouvel achat',
@@ -263,7 +304,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => _ProductDetailSheet(product: product),
+      builder: (_) => ProductDetailSheet(product: product),
     );
   }
 
@@ -278,574 +319,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Marqué comme vendu ✓'),
-        backgroundColor: MargineTheme.profitGreen,
-      ),
-    );
-  }
-}
-
-// ── Swipeable product card ─────────────────────────────────────────────────
-
-class _SwipeableCard extends StatelessWidget {
-  final Product product;
-  final VoidCallback onTap;
-  final VoidCallback onMarkSold;
-
-  const _SwipeableCard({
-    required this.product,
-    required this.onTap,
-    required this.onMarkSold,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    if (product.status == 'sold') {
-      return ProductCard(product: product, onTap: onTap);
-    }
-
-    return Dismissible(
-      key: ValueKey('swipe_${product.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 28),
-        decoration: BoxDecoration(
-          color: MargineTheme.profitGreen,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.check_circle_rounded, color: Colors.white, size: 28),
-            SizedBox(height: 2),
-            Text('Vendu', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-      confirmDismiss: (_) async {
-        return await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Marquer comme vendu ?'),
-            content: Text(product.name),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
-              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Confirmer')),
-            ],
-          ),
-        ) ?? false;
-      },
-      onDismissed: (_) => onMarkSold(),
-      child: ProductCard(product: product, onTap: onTap),
-    );
-  }
-}
-
-// ── Sort button ────────────────────────────────────────────────────────────
-
-class _SortBtn extends StatelessWidget {
-  final SortOption current;
-  final ValueChanged<SortOption> onSelected;
-
-  const _SortBtn({required this.current, required this.onSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Material(
-      color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => _showMenu(context),
-        child: const Padding(
-          padding: EdgeInsets.all(10),
-          child: Icon(Icons.sort_rounded, size: 22),
-        ),
-      ),
-    );
-  }
-
-  void _showMenu(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: cs.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text('Trier par', style: Theme.of(context).textTheme.titleMedium),
-            ),
-            const SizedBox(height: 8),
-            _SortTile(
-              icon: Icons.schedule_rounded,
-              label: 'Plus récent',
-              selected: current == SortOption.dateDesc,
-              onTap: () { onSelected(SortOption.dateDesc); Navigator.pop(ctx); },
-            ),
-            _SortTile(
-              icon: Icons.trending_up_rounded,
-              label: 'Marge la plus élevée',
-              selected: current == SortOption.profitDesc,
-              onTap: () { onSelected(SortOption.profitDesc); Navigator.pop(ctx); },
-            ),
-            _SortTile(
-              icon: Icons.euro_rounded,
-              label: 'Prix achat le plus élevé',
-              selected: current == SortOption.priceDesc,
-              onTap: () { onSelected(SortOption.priceDesc); Navigator.pop(ctx); },
-            ),
-            _SortTile(
-              icon: Icons.sort_by_alpha_rounded,
-              label: 'Ordre alphabétique',
-              selected: current == SortOption.nameAsc,
-              onTap: () { onSelected(SortOption.nameAsc); Navigator.pop(ctx); },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SortTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _SortTile({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return ListTile(
-      leading: Icon(icon, size: 20, color: selected ? cs.primary : cs.onSurfaceVariant),
-      title: Text(
-        label,
-        style: TextStyle(color: selected ? cs.primary : cs.onSurface, fontWeight: selected ? FontWeight.w600 : FontWeight.w400),
-      ),
-      trailing: selected ? Icon(Icons.check_rounded, size: 18, color: cs.primary) : null,
-      onTap: onTap,
-    );
-  }
-}
-
-// ── Icon button used in header ─────────────────────────────────────────────
-
-class _IconBtn extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _IconBtn({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Material(
-      color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Icon(icon, size: 22, color: cs.onSurfaceVariant),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Filter pills ────────────────────────────────────────────────────────────
-
-class FilterPills extends StatelessWidget {
-  final String current;
-  final ValueChanged<String> onChanged;
-
-  const FilterPills({super.key, required this.current, required this.onChanged});
-
-  static const _filters = [
-    ('all', 'Tout'),
-    ('bought', 'Stock'),
-    ('listed', 'En ligne'),
-    ('sold', 'Vendu'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: _filters.map((f) {
-          final isSelected = current == f.$1;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              onTap: () => onChanged(f.$1),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? cs.primary : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  f.$2,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected ? cs.onPrimary : cs.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-// ── Empty state ────────────────────────────────────────────────────────────
-
-class _EmptyState extends StatelessWidget {
-  final String filter;
-  const _EmptyState({required this.filter});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    String message;
-    if (filter == 'all') {
-      message = 'Aucun article pour l\'instant.\nAjoute ton premier achat !';
-    } else {
-      message = 'Aucun article dans ce statut.';
-    }
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.inventory_2_outlined, size: 64, color: cs.outlineVariant),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Product detail bottom sheet ─────────────────────────────────────────────
-
-class _ProductDetailSheet extends ConsumerWidget {
-  final Product product;
-  const _ProductDetailSheet({required this.product});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    final isSold = product.status == 'sold';
-    final profit = product.status == 'sold' && product.salePrice != null
-        ? product.salePrice! - product.purchasePrice - product.vintedFees - product.shippingCost - product.packagingCost
-        : 0.0;
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.75,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerHighest,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: ListView(
-            controller: scrollController,
-            padding: EdgeInsets.zero,
-            children: [
-              // ── Drag handle ────────────────────────────────────────────────
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 10, bottom: 16),
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: cs.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-
-              // ── Photo hero ─────────────────────────────────────────────────
-              if (product.photoPath != null && product.photoPath!.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.file(
-                    File(product.photoPath!),
-                    height: 220,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _PhotoPlaceholder(cs: cs),
-                  ),
-                )
-              else
-                _PhotoPlaceholder(cs: cs),
-              const SizedBox(height: 20),
-
-              // ── Name + status ──────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(product.name, style: tt.headlineMedium),
-                    ),
-                    const SizedBox(width: 12),
-                    _StatusChip(status: product.status),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 4),
-
-              // ── Profit highlight ───────────────────────────────────────────
-              if (isSold)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
-                    profit >= 0
-                        ? '+${profit.toStringAsFixed(0)} €'
-                        : '${profit.toStringAsFixed(0)} €',
-                    style: tt.displayMedium?.copyWith(
-                      color: profit >= 0 ? MargineTheme.profitGreen : MargineTheme.lossRed,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 20),
-
-              // ── Details grid ──────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    _DetailRow(label: 'Acheté le', value: _fmtDate(product.purchaseDate)),
-                    _DetailRow(label: 'Prix d\'achat', value: '${product.purchasePrice.toStringAsFixed(2)} €'),
-                    _DetailRow(label: 'Provenance', value: product.source),
-                    if (product.quantity > 1)
-                      _DetailRow(label: 'Quantité', value: 'x${product.quantity}'),
-                    if (product.listingPrice != null)
-                      _DetailRow(label: 'Prix de vente', value: '${product.listingPrice!.toStringAsFixed(2)} €'),
-                    if (isSold && product.salePrice != null) ...[
-                      _DetailRow(label: 'Vendu le', value: product.saleDate != null ? _fmtDate(product.saleDate!) : '-'),
-                      _DetailRow(label: 'Frais Vinted', value: '-${product.vintedFees.toStringAsFixed(2)} €'),
-                      _DetailRow(label: 'Frais envoi', value: '-${product.shippingCost.toStringAsFixed(2)} €'),
-                      _DetailRow(label: 'Emballage', value: '-${product.packagingCost.toStringAsFixed(2)} €'),
-                    ],
-                    if (product.notes != null && product.notes!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(product.notes!, style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // ── Action buttons ─────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    if (!isSold)
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _markSold(context, ref, product.id);
-                          },
-                          icon: const Icon(Icons.check_circle_outline, size: 20),
-                          label: const Text('Marquer comme vendu'),
-                        ),
-                      ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          context.push('/article/${product.id}/modifier');
-                        },
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        label: const Text('Modifier'),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: TextButton.icon(
-                        onPressed: () => _deleteProduct(context, ref, product.id),
-                        icon: Icon(Icons.delete_outline, size: 18, color: cs.error),
-                        label: Text('Supprimer', style: TextStyle(color: cs.error)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _markSold(BuildContext context, WidgetRef ref, int id) {
-    final dao = ref.read(productDaoProvider);
-    dao.updateProduct(ProductsCompanion(
-      id: Value(id),
-      status: const Value('sold'),
-      saleDate: Value(DateTime.now()),
-    ));
-    HapticFeedback.heavyImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Marqué comme vendu ✓'),
-        backgroundColor: MargineTheme.profitGreen,
-      ),
-    );
-  }
-
-  void _deleteProduct(BuildContext context, WidgetRef ref, int id) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer'),
-        content: const Text('Cette action est irréversible.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
-          TextButton(
-            onPressed: () {
-              ref.read(productDaoProvider).deleteProduct(id);
-              Navigator.pop(ctx);
-              Navigator.pop(context);
-            },
-            child: Text('Supprimer', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _fmtDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-}
-
-// ── Helper widgets ──────────────────────────────────────────────────────────
-
-class _PhotoPlaceholder extends StatelessWidget {
-  final ColorScheme cs;
-  const _PhotoPlaceholder({required this.cs});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 220,
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: Icon(Icons.image_outlined, size: 48, color: cs.outlineVariant),
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _DetailRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final String status;
-  const _StatusChip({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final (label, color) = switch (status) {
-      'bought' => ('Stock', MargineTheme.statusBought),
-      'listed' => ('En ligne', MargineTheme.statusListed),
-      'sold' => ('Vendu', MargineTheme.statusSold),
-      _ => ('Inconnu', Colors.grey),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
+        backgroundColor: ForgeColors.teal,
       ),
     );
   }

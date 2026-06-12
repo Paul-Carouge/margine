@@ -1,81 +1,131 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/forge_colors.dart';
 
-/// 2×2 grid of key metrics — clean, typographic, no cards.
+/// Stats cockpit — individual cards with icons.
+///
+/// Forge v3.0 design:
+///   - Each card: Surface background, 20px radius, 16px padding
+///   - Icon: 20px, Crimson (or Teal for profit/revenue)
+///   - Value: Outfit titleLarge 18px Weight 700
+///   - Label: Outfit bodySmall 12px
+///   - Wrapped in two rows, 10px spacing
 class StatsGrid extends StatelessWidget {
   final Map<String, dynamic> stats;
   const StatsGrid({super.key, required this.stats});
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     final invested = (stats['totalInvested'] as double?) ?? 0;
     final revenue = (stats['totalRevenue'] as double?) ?? 0;
     final profit = (stats['totalProfit'] as double?) ?? 0;
     final stockCount = (stats['boughtCount'] as int?) ?? 0;
+    final listedCount = (stats['listedCount'] as int?) ?? 0;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(child: _StatCell(label: 'Dépensé', value: '${invested.toStringAsFixed(0)} €', color: cs.onSurface)),
-              const SizedBox(width: 12),
-              Expanded(child: _StatCell(label: 'Gagné', value: '${revenue.toStringAsFixed(0)} €', color: MargineTheme.profitGreen)),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(child: _StatCell(
+    return Column(
+      children: [
+        // Row 1: Dépensé, Gagné, Marge
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: Icons.shopping_cart_rounded,
+                iconColor: ForgeColors.crimson,
+                value: '${invested.toStringAsFixed(0)} €',
+                label: 'Dépensé',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.trending_up_rounded,
+                iconColor: ForgeColors.teal,
+                value: '${revenue.toStringAsFixed(0)} €',
+                label: 'Gagné',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.show_chart_rounded,
+                iconColor: profit >= 0 ? ForgeColors.teal : ForgeColors.error,
+                value:
+                    '${profit >= 0 ? '+' : ''}${profit.toStringAsFixed(0)} €',
                 label: 'Marge',
-                value: '${profit >= 0 ? '+' : ''}${profit.toStringAsFixed(0)} €',
-                color: profit >= 0 ? MargineTheme.profitGreen : MargineTheme.lossRed,
-              )),
-              const SizedBox(width: 12),
-              Expanded(child: _StatCell(label: 'Stock', value: '$stockCount articles', color: cs.onSurfaceVariant)),
-            ],
-          ),
-        ],
-      ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        // Row 2: Stock, En ligne
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: Icons.inventory_2_rounded,
+                iconColor: ForgeColors.crimson,
+                value: '$stockCount',
+                label: 'En stock',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.store_rounded,
+                iconColor: ForgeColors.teal,
+                value: '$listedCount',
+                label: 'En ligne',
+              ),
+            ),
+            const Expanded(child: SizedBox.shrink()), // spacer for 3-column alignment
+          ],
+        ),
+      ],
     );
   }
 }
 
-class _StatCell extends StatelessWidget {
-  final String label;
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
   final String value;
-  final Color color;
+  final String label;
 
-  const _StatCell({
-    required this.label,
+  const _StatCard({
+    required this.icon,
+    required this.iconColor,
     required this.value,
-    required this.color,
+    required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: tt.bodySmall?.copyWith(fontWeight: FontWeight.w500)),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: tt.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: color,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ForgeColors.surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: iconColor),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: tt.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: ForgeColors.textPrimary,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: tt.bodySmall,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -31,7 +31,7 @@ class Products extends Table {
   TextColumn get name => text()();
   TextColumn get description => text().nullable()();
   IntColumn get categoryId =>
-      integer().references(Categories, #id, onDelete: KeyAction.setNull)();
+      integer().nullable().references(Categories, #id, onDelete: KeyAction.setNull)();
   IntColumn get quantity => integer().withDefault(const Constant(1))();
   RealColumn get purchasePrice => real()();
   DateTimeColumn get purchaseDate => dateTime()();
@@ -90,7 +90,7 @@ class Product {
   final int id;
   final String name;
   final String? description;
-  final int categoryId;
+  final int? categoryId;
   final int quantity;
   final double purchasePrice;
   final DateTime purchaseDate;
@@ -112,7 +112,7 @@ class Product {
     required this.id,
     required this.name,
     this.description,
-    required this.categoryId,
+    this.categoryId,
     this.quantity = 1,
     required this.purchasePrice,
     required this.purchaseDate,
@@ -169,6 +169,7 @@ class AppDatabase extends _$AppDatabase {
           }
         },
         beforeOpen: (details) async {
+          await customStatement('PRAGMA foreign_keys = ON');
           if (details.wasCreated) {
             _seedDefaultCategories();
           }
@@ -215,14 +216,21 @@ class AppDatabase extends _$AppDatabase {
   }
 
   // -----------------------------------------------------------------------
-  // Connection
+  // Connection — with automatic migration from margine.db → letabli.db
   // -----------------------------------------------------------------------
 
   static LazyDatabase _openConnection() {
     return LazyDatabase(() async {
       final dbFolder = await getApplicationDocumentsDirectory();
-      final file = File(p.join(dbFolder.path, 'margine.db'));
-      return NativeDatabase(file);
+      final newFile = File(p.join(dbFolder.path, 'letabli.db'));
+      final oldFile = File(p.join(dbFolder.path, 'margine.db'));
+
+      // Auto-migrate: rename old DB if it exists and new one doesn't
+      if (await oldFile.exists() && !await newFile.exists()) {
+        await oldFile.rename(newFile.path);
+      }
+
+      return NativeDatabase(newFile);
     });
   }
 }

@@ -30,12 +30,18 @@ final goRouter = GoRouter(
     ),
     GoRoute(
       path: '/article/:id/modifier',
-      pageBuilder: (context, state) => _slideUp(
-        AddProductScreen(
-          productId: int.parse(state.pathParameters['id']!),
-        ),
-        state,
-      ),
+      redirect: (context, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '');
+        if (id == null) return '/home';
+        return null;
+      },
+      pageBuilder: (context, state) {
+        final id = int.parse(state.pathParameters['id']!);
+        return _slideUp(
+          AddProductScreen(productId: id),
+          state,
+        );
+      },
     ),
     GoRoute(
       path: '/analytics',
@@ -62,7 +68,7 @@ Page<Object> _slideUp(Widget child, GoRouterState state) {
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       return SlideTransition(
         position: Tween<Offset>(
-          begin: const Offset(0, 0.08),
+          begin: const Offset(0, 0.12),
           end: Offset.zero,
         ).animate(CurvedAnimation(
           parent: animation,

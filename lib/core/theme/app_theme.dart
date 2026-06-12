@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import 'forge_colors.dart';
 
 // ---------------------------------------------------------------------------
 // Theme mode provider
@@ -10,111 +11,58 @@ import 'package:google_fonts/google_fonts.dart';
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
 // ---------------------------------------------------------------------------
-// MargineTheme — "Safran & Ardoise" (complete rebrand)
+// ForgeTheme — "Crimson / Teal / Graphite" (L'Établi v3.0.0 Forge)
 // ---------------------------------------------------------------------------
 
-/// Margine v2.0 Material 3 theme — "Safran & Ardoise".
+/// L'Établi v3.0 Material 3 theme — "Forge".
 ///
-/// A warm, bold palette:
-///   Dark  — charcoal backgrounds, saffron gold primary, slate blue secondary
-///   Light — warm ivory background, dark gold primary, muted slate
+/// Three pillars:
+///   - **Crimson** (#C0392B) — primary actions, FAB, selections
+///   - **Precision Teal** (#14B8A6) — profit, sold, success
+///   - **Warm Graphite** (#15151C) — the workbench background
 ///
 /// Typography:
-///   - Sora (Google Fonts) — display / headings (Medium–ExtraBold)
-///   - Inter (Google Fonts) — body / UI / labels (Regular–SemiBold)
-class MargineTheme {
-  MargineTheme._();
+///   - DM Serif Display (Google Fonts) — display / headings
+///   - Outfit (Google Fonts) — body / UI / labels
+class ForgeTheme {
+  ForgeTheme._();
 
-  // ── Common tokens ────────────────────────────────────────────────────────
+  // ── Border radius system ───────────────────────────────────────────────────
 
   static const _cardRadius = 20.0;
   static const _buttonRadius = 14.0;
   static const _inputRadius = 12.0;
-  static const _chipRadius = 12.0;
+  static const _chipRadius = 20.0; // pill shape
   static const _sheetRadius = 24.0;
+  static const _fabRadius = 18.0;
 
-  // ── Light palette ────────────────────────────────────────────────────────
-
-  static const _lightBg = Color(0xFFF5F0EB);
-  static const _lightSurface = Color(0xFFFFFFFF);
-  static const _lightPrimary = Color(0xFFB8860B);   // dark gold
-  static const _lightOnPrimary = Color(0xFFFFFFFF);
-  static const _lightSecondary = Color(0xFF4A5687);  // muted slate
-  static const _lightText = Color(0xFF1A1A22);
-  static const _lightTextMuted = Color(0xFF7A7A88);
-  static const _lightOutline = Color(0xFFD6D0C8);
-  static const _lightError = Color(0xFFC73E1D);
-
-  // ── Dark palette ─────────────────────────────────────────────────────────
-
-  static const _darkBg = Color(0xFF0D0D12);
-  static const _darkSurface = Color(0xFF16161C);
-  static const _darkCard = Color(0xFF1E1E28);
-  static const _darkPrimary = Color(0xFFD4A74D);    // saffron gold
-  static const _darkOnPrimary = Color(0xFF0D0D12);
-  static const _darkSecondary = Color(0xFF7A8FAF);  // slate blue
-  static const _darkText = Color(0xFFF0EDE8);
-  static const _darkTextMuted = Color(0xFF8A8A98);
-  static const _darkOutline = Color(0xFF2A2A35);
-  static const _darkError = Color(0xFFD94A3D);
-
-  // ── Shared semantic colours ──────────────────────────────────────────────
-
-  static const Color profitGreen = Color(0xFF3A8A6C);
-  static const Color lossRed = Color(0xFFD94A3D);
-  static const Color statusBought = Color(0xFF3A8A6C);
-  static const Color statusListed = Color(0xFF5B7FBF);
-  static const Color statusSold = Color(0xFFD4A74D);
-
-  // ── Light ThemeData ──────────────────────────────────────────────────────
+  // ── Light ThemeData ────────────────────────────────────────────────────────
 
   static ThemeData get light {
-    final cs = ColorScheme.light(
-      primary: _lightPrimary,
-      onPrimary: _lightOnPrimary,
-      primaryContainer: _lightPrimary.withValues(alpha: 0.12),
-      onPrimaryContainer: _lightPrimary,
-      secondary: _lightSecondary,
-      onSecondary: Colors.white,
-      surface: _lightBg,
-      onSurface: _lightText,
-      surfaceContainerHighest: _lightSurface,
-      onSurfaceVariant: _lightTextMuted,
-      error: _lightError,
-      onError: Colors.white,
-      outline: _lightOutline,
-      outlineVariant: _lightOutline.withValues(alpha: 0.4),
-      surfaceTint: Colors.transparent,
+    final cs = ForgeColors.lightScheme();
+    return _buildTheme(
+      cs,
+      ForgeColors.lightBg,
+      ForgeColors.lightSurface,
+      ForgeColors.lightTextPrimary,
+      ForgeColors.lightTextSecondary,
     );
-
-    return _buildTheme(cs, _lightBg, _lightSurface, _lightText, _lightTextMuted);
   }
 
-  // ── Dark ThemeData ───────────────────────────────────────────────────────
+  // ── Dark ThemeData ─────────────────────────────────────────────────────────
 
   static ThemeData get dark {
-    final cs = ColorScheme.dark(
-      primary: _darkPrimary,
-      onPrimary: _darkOnPrimary,
-      primaryContainer: _darkPrimary.withValues(alpha: 0.15),
-      onPrimaryContainer: _darkPrimary,
-      secondary: _darkSecondary,
-      onSecondary: _darkBg,
-      surface: _darkBg,
-      onSurface: _darkText,
-      surfaceContainerHighest: _darkCard,
-      onSurfaceVariant: _darkTextMuted,
-      error: _darkError,
-      onError: _darkBg,
-      outline: _darkOutline,
-      outlineVariant: _darkOutline.withValues(alpha: 0.4),
-      surfaceTint: Colors.transparent,
+    final cs = ForgeColors.darkScheme();
+    return _buildTheme(
+      cs,
+      ForgeColors.bg,
+      ForgeColors.surface,
+      ForgeColors.textPrimary,
+      ForgeColors.textSecondary,
     );
-
-    return _buildTheme(cs, _darkBg, _darkCard, _darkText, _darkTextMuted);
   }
 
-  // ── Shared theme builder ─────────────────────────────────────────────────
+  // ── Shared theme builder ───────────────────────────────────────────────────
 
   static ThemeData _buildTheme(
     ColorScheme cs,
@@ -140,7 +88,9 @@ class MargineTheme {
         color: cardColor,
         surfaceTintColor: Colors.transparent,
         clipBehavior: Clip.antiAlias,
-        shadowColor: isDark ? Colors.black.withValues(alpha: 0.2) : cs.primary.withValues(alpha: 0.04),
+        shadowColor: isDark
+            ? ForgeColors.bg.withValues(alpha: 0.4)
+            : cs.primary.withValues(alpha: 0.04),
       ),
 
       // ── Elevated button ───────────────────────────────────────────────────
@@ -154,7 +104,7 @@ class MargineTheme {
           ),
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          textStyle: GoogleFonts.inter(
+          textStyle: GoogleFonts.outfit(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.3,
@@ -165,7 +115,7 @@ class MargineTheme {
       // ── Input decoration ──────────────────────────────────────────────────
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? _darkSurface : _lightBg,
+        fillColor: isDark ? ForgeColors.surface : ForgeColors.lightBg,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_inputRadius),
           borderSide: BorderSide(color: cs.outline),
@@ -182,9 +132,11 @@ class MargineTheme {
           borderRadius: BorderRadius.circular(_inputRadius),
           borderSide: BorderSide(color: cs.error),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        labelStyle: GoogleFonts.inter(fontSize: 14, color: textMuted),
-        hintStyle: GoogleFonts.inter(fontSize: 14, color: textMuted.withValues(alpha: 0.6)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        labelStyle: GoogleFonts.outfit(fontSize: 14, color: textMuted),
+        hintStyle: GoogleFonts.outfit(
+            fontSize: 14, color: textMuted.withValues(alpha: 0.6)),
       ),
 
       // ── App bar ───────────────────────────────────────────────────────────
@@ -194,7 +146,7 @@ class MargineTheme {
         elevation: 0,
         scrolledUnderElevation: 0.5,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.sora(
+        titleTextStyle: GoogleFonts.dmSerifDisplay(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: text,
@@ -206,27 +158,30 @@ class MargineTheme {
         showDragHandle: true,
         dragHandleColor: cs.outline,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(_sheetRadius)),
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(_sheetRadius)),
         ),
         backgroundColor: cardColor,
       ),
 
-      // ── Chip ──────────────────────────────────────────────────────────────
+      // ── Chip / Filter pill ────────────────────────────────────────────────
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(_chipRadius),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
-        backgroundColor: cs.primary.withValues(alpha: 0.1),
-        selectedColor: cs.primary,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        labelStyle:
+            GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w600),
+        backgroundColor: cardColor,
+        selectedColor: ForgeColors.crimsonContainer,
         side: BorderSide.none,
       ),
 
       // ── SnackBar ──────────────────────────────────────────────────────────
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 8,
       ),
 
@@ -242,57 +197,99 @@ class MargineTheme {
         backgroundColor: cs.primary,
         foregroundColor: cs.onPrimary,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(_fabRadius),
         ),
         elevation: 0,
       ),
 
-      // ── Text theme ────────────────────────────────────────────────────────
-      textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).copyWith(
-        displayLarge: GoogleFonts.sora(
-          fontSize: 40, fontWeight: FontWeight.w800, letterSpacing: -0.02, color: text,
+      // ── Text theme — DM Serif Display (display/headlines) + Outfit (body/labels) ─
+      textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme)
+          .copyWith(
+        // Display — DM Serif Display
+        displayLarge: GoogleFonts.dmSerifDisplay(
+          fontSize: 40,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.02,
+          color: text,
         ),
-        displayMedium: GoogleFonts.sora(
-          fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -0.01, color: text,
+        displayMedium: GoogleFonts.dmSerifDisplay(
+          fontSize: 32,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.01,
+          color: text,
         ),
-        displaySmall: GoogleFonts.sora(
-          fontSize: 26, fontWeight: FontWeight.w700, letterSpacing: -0.01, color: text,
+        displaySmall: GoogleFonts.dmSerifDisplay(
+          fontSize: 26,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.01,
+          color: text,
         ),
-        headlineLarge: GoogleFonts.sora(
-          fontSize: 22, fontWeight: FontWeight.w600, color: text,
+        // Headlines — DM Serif Display
+        headlineLarge: GoogleFonts.dmSerifDisplay(
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          color: text,
         ),
-        headlineMedium: GoogleFonts.sora(
-          fontSize: 20, fontWeight: FontWeight.w600, color: text,
+        headlineMedium: GoogleFonts.dmSerifDisplay(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: text,
         ),
-        headlineSmall: GoogleFonts.sora(
-          fontSize: 17, fontWeight: FontWeight.w500, color: text,
+        headlineSmall: GoogleFonts.dmSerifDisplay(
+          fontSize: 17,
+          fontWeight: FontWeight.w500,
+          color: text,
         ),
-        titleLarge: GoogleFonts.inter(
-          fontSize: 18, fontWeight: FontWeight.w600, color: text,
+        // Titles (body hierarchy) — Outfit
+        titleLarge: GoogleFonts.outfit(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: text,
         ),
-        titleMedium: GoogleFonts.inter(
-          fontSize: 15, fontWeight: FontWeight.w600, color: text,
+        titleMedium: GoogleFonts.outfit(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: text,
         ),
-        titleSmall: GoogleFonts.inter(
-          fontSize: 13, fontWeight: FontWeight.w600, color: text,
+        titleSmall: GoogleFonts.outfit(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: text,
         ),
-        bodyLarge: GoogleFonts.inter(
-          fontSize: 16, fontWeight: FontWeight.w400, color: text,
+        // Body — Outfit
+        bodyLarge: GoogleFonts.outfit(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          color: text,
         ),
-        bodyMedium: GoogleFonts.inter(
-          fontSize: 14, fontWeight: FontWeight.w400, color: text,
+        bodyMedium: GoogleFonts.outfit(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: text,
         ),
-        bodySmall: GoogleFonts.inter(
-          fontSize: 12, fontWeight: FontWeight.w400, color: textMuted,
+        bodySmall: GoogleFonts.outfit(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          color: textMuted,
         ),
-        labelLarge: GoogleFonts.inter(
-          fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 0.02, color: text,
+        // Labels — Outfit
+        labelLarge: GoogleFonts.outfit(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.02,
+          color: text,
         ),
-        labelMedium: GoogleFonts.inter(
-          fontSize: 12, fontWeight: FontWeight.w500, letterSpacing: 0.02, color: textMuted,
+        labelMedium: GoogleFonts.outfit(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.02,
+          color: textMuted,
         ),
-        labelSmall: GoogleFonts.inter(
-          fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.02, color: textMuted,
+        labelSmall: GoogleFonts.outfit(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.02,
+          color: textMuted,
         ),
       ),
     );

@@ -8,7 +8,6 @@ import 'package:drift/drift.dart' hide Column;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import '../../../core/theme/app_theme.dart';
 import '../../../data/database/app_database.dart';
 import '../../providers/app_providers.dart';
 

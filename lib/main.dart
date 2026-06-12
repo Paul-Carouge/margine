@@ -13,12 +13,12 @@ void main() {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  runApp(const ProviderScope(child: MargineApp()));
+  runApp(const ProviderScope(child: EtabliApp()));
 }
 
-/// Root widget for Margine v2.0 — complete rebrand.
-class MargineApp extends ConsumerWidget {
-  const MargineApp({super.key});
+/// Root widget for L'Établi v3.0.0 — Forge.
+class EtabliApp extends ConsumerWidget {
+  const EtabliApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,8 +27,8 @@ class MargineApp extends ConsumerWidget {
     return MaterialApp.router(
       title: "L'Établi",
       debugShowCheckedModeBanner: false,
-      theme: MargineTheme.light,
-      darkTheme: MargineTheme.dark,
+      theme: ForgeTheme.light,
+      darkTheme: ForgeTheme.dark,
       themeMode: themeMode,
       routerConfig: goRouter,
     );
