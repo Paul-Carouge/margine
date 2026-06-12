@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:drift/drift.dart' hide Column;
 
 import '../../../core/theme/forge_colors.dart';
+import '../../../features/update/providers/update_providers.dart';
+import '../../../features/update/ui/update_bottom_sheet.dart';
 import '../../../data/database/app_database.dart';
 import '../../providers/app_providers.dart';
 import 'widgets/stats_grid.dart';
@@ -48,6 +50,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final productsAsync = filter == 'all'
         ? ref.watch(productsStreamProvider)
         : ref.watch(productsByStatusProvider(filter));
+
+    // Vérifier les mises à jour automatiquement — une seule fois par session
+    ref.watch(updateCheckProvider);
+    ref.listen(updateCheckProvider, (_, next) {
+      next.whenOrNull(data: (release) {
+        if (release != null) {
+          final alreadyShown = ref.read(updateShownForVersionProvider);
+          if (release.version != alreadyShown) {
+            ref.read(updateShownForVersionProvider.notifier).state = release.version;
+            showUpdateSheet(context, release);
+          }
+        }
+      });
+    });
 
     final cs = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;

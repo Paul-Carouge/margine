@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/theme/forge_colors.dart';
-import '../../core/services/update_service.dart';
 import '../../data/database/app_database.dart';
 import '../../data/database/dao/category_dao.dart';
 import '../../data/database/dao/product_dao.dart';
@@ -140,29 +139,3 @@ double marginPercent(Product p) {
   return (profit / p.purchasePrice) * 100;
 }
 
-// ---------------------------------------------------------------------------
-// Update service providers
-// ---------------------------------------------------------------------------
-
-/// Service de mise à jour via l'API GitHub.
-final updateServiceProvider = Provider<UpdateService>((ref) {
-  final service = UpdateService();
-  ref.onDispose(() => service.dispose());
-  return service;
-});
-
-/// Résultat de la vérification de mise à jour.
-final updateCheckProvider = FutureProvider<UpdateCheckResult>((ref) async {
-  return ref.watch(updateServiceProvider).checkForUpdate();
-});
-
-/// Contrôle l'affichage du dialog de mise à jour.
-final showUpdateDialogProvider = StateProvider<bool>((ref) => false);
-
-/// Version ignorée par l'utilisateur (sauvegardée dans SharedPreferences).
-final dismissedVersionProvider = StateProvider<String?>((ref) => null);
-
-/// Fournit la version actuelle de l'application via package_info_plus.
-final currentVersionProvider = FutureProvider<String>((ref) async {
-  return ref.watch(updateServiceProvider).getCurrentVersion();
-});

@@ -6,8 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
-import '../../../core/services/update_service.dart';
+import '../../../features/update/providers/update_providers.dart';
+import '../../../features/update/ui/update_bottom_sheet.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/forge_colors.dart';
 import '../../providers/app_providers.dart';
@@ -29,7 +31,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final tt = Theme.of(context).textTheme;
     final themeMode = ref.watch(themeModeProvider);
     final goal = ref.watch(monthlyGoalProvider);
-    final currentVersion = ref.watch(currentVersionProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -179,18 +180,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ListTile(
                   leading: Icon(Icons.code, color: cs.primary),
                   title: const Text('Version'),
-                  trailing: currentVersion.when(
-                    data: (v) => Text(v,
-                        style: tt.bodyMedium
-                            ?.copyWith(color: cs.onSurfaceVariant)),
-                    loading: () => const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    error: (_, __) => Text('—',
-                        style: tt.bodyMedium
-                            ?.copyWith(color: cs.onSurfaceVariant)),
+                  trailing: FutureBuilder<PackageInfo>(
+                    future: PackageInfo.fromPlatform(),
+                    builder: (context, snapshot) {
+                      final version = snapshot.data?.version ?? '...';
+                      return Text(version,
+                          style: tt.bodyMedium
+                              ?.copyWith(color: cs.onSurfaceVariant));
+                    },
                   ),
                 ),
                 const Divider(indent: 56, height: 1, color: Color(0x1AFFFFFF)),
@@ -249,7 +246,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   ///
   /// Affiche un loader, appelle l'API GitHub, puis :
   /// - Si à jour : SnackBar "Vous êtes à jour (vX.Y.Z)"
-  /// - Si mise à jour dispo : affiche la popup (bypass la version ignorée)
+  /// - Si mise à jour dispo : affiche le dialog de mise à jour
   /// - Si erreur : SnackBar "Impossible de vérifier les mises à jour"
   Future<void> _checkUpdate(BuildContext context) async {
     if (_isCheckingUpdate) return;
@@ -260,30 +257,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final errorColor = Theme.of(context).colorScheme.error;
 
     try {
-      final result = await ref.read(updateServiceProvider).checkForUpdate();
+      final service = ref.read(updateServiceProvider);
+      final release = await service.checkForUpdate();
 
       if (!mounted) return;
 
-      if (result.error != null) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: const Text('Impossible de vérifier les mises à jour'),
-            backgroundColor: errorColor,
-          ),
-        );
-      } else if (result.hasUpdate && result.latestVersion != null) {
-        // Vérification manuelle : toujours afficher la popup (bypass ignorée)
-        await showUpdateDialog(
-          this.context,
-          version: result.latestVersion!,
-          releaseNotes: result.releaseNotes ?? '',
-          downloadUrl: result.downloadUrl ?? '',
-        );
+      if (release != null) {
+        // Vérification manuelle : toujours afficher le dialog
+        showUpdateSheet(this.context, release);
       } else {
+        final info = await PackageInfo.fromPlatform();
         messenger.showSnackBar(
           SnackBar(
-            content: Text('Vous êtes à jour (v${result.currentVersion})'),
-            backgroundColor: const Color(0xFF14B8A6),
+            content: Text('Vous êtes à jour (v${info.version})'),
+            backgroundColor: ForgeColors.teal,
           ),
         );
       }

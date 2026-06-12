@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/services/update_service.dart';
-import '../../providers/app_providers.dart';
+import '../../../features/update/providers/update_providers.dart';
+import '../../../features/update/ui/update_bottom_sheet.dart';
 
 /// Animated splash screen shown on app launch.
 ///
 /// After the animation, checks for updates via GitHub API.
-/// If an update is available and hasn't been dismissed by the user,
-/// shows a dialog before navigating to the home screen.
+/// If an update is available, shows the update dialog before navigating home.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -59,30 +58,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (_navigated) return;
 
     try {
-      final result = await ref.read(updateServiceProvider).checkForUpdate();
+      final service = ref.read(updateServiceProvider);
+      final release = await service.checkForUpdate();
 
       if (!mounted) return;
 
-      // Vérifier si l'utilisateur a déjà ignoré cette version
-      final dismissed = ref.read(dismissedVersionProvider);
-
-      if (result.hasUpdate &&
-          result.latestVersion != null &&
-          result.latestVersion != dismissed) {
-        // Afficher le dialog de mise à jour
-        final shouldUpdate = await showUpdateDialog(
-          context,
-          version: result.latestVersion!,
-          releaseNotes: result.releaseNotes ?? '',
-          downloadUrl: result.downloadUrl ?? '',
-        );
-
-        if (!mounted) return;
-
-        if (shouldUpdate == false) {
-          // L'utilisateur a cliqué "Plus tard", sauvegarder la version ignorée
-          ref.read(dismissedVersionProvider.notifier).state =
-              result.latestVersion;
+      if (release != null) {
+        // Une mise à jour est disponible — afficher le dialog
+        final alreadyShown = ref.read(updateShownForVersionProvider);
+        if (release.version != alreadyShown) {
+          ref.read(updateShownForVersionProvider.notifier).state = release.version;
+          showUpdateSheet(context, release);
         }
       }
     } catch (_) {

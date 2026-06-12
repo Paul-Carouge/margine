@@ -37,6 +37,9 @@ dependencies:
   shared_preferences: ^2.3.0
   package_info_plus: ^10.1.0
   http: ^1.2.0
+  dio: ^5.4.0
+  version: ^3.0.2
+  open_filex: ^4.6.0
 
 dev_dependencies:
   flutter_test:
