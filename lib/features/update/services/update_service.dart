@@ -131,7 +131,7 @@ class UpdateService {
   /// Priorise le platform channel direct (plus fiable), fallback sur open_filex.
   Future<bool> installApk(String filePath) async {
     try {
-      const channel = MethodChannel('com.letabli.app/installer');
+      const channel = MethodChannel('com.margine.app.margine/installer');
       await channel.invokeMethod('installApk', {'filePath': filePath});
       return true;
     } on MissingPluginException {
